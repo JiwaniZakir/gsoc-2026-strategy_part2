@@ -1,0 +1,692 @@
+# Community Engagement Guide - Open Climate Fix
+
+## Purpose
+
+This guide provides practical templates, examples, and best practices for engaging with the Open Climate Fix community. Following these guidelines ensures smooth collaboration and strengthens relationships with the team.
+
+---
+
+## Communication Channels Overview
+
+### 1. Email (Formal Communication)
+
+**Primary Contacts:**
+- **quartz.support@openclimatefix.org** — Project-specific support, technical questions, GSoC mentorship
+- **info@openclimatefix.org** — General inquiries, organizational matters
+
+**When to Use:**
+- Initial introductions
+- GSoC-related questions or proposals
+- Requesting mentorship
+- Scheduling recurring meetings
+- Important announcements about your contributions
+
+**Response Time Expectation:** 24-48 hours (they're volunteers/busy)
+
+---
+
+### 2. GitHub Issues (Bug Reports & Feature Requests)
+
+**Location:** Each repository's Issues tab
+- Example: github.com/openclimatefix/open-source-quartz-solar-forecast/issues
+
+**When to Use:**
+- Report bugs (with reproducible steps)
+- Propose features
+- Ask for clarification on existing code
+- Request documentation improvements
+
+**Format:** Use issue templates if available; otherwise follow structure below
+
+---
+
+### 3. GitHub Discussions (Q&A & Design Discussions)
+
+**Location:** Each repository's Discussions tab
+- Example: github.com/openclimatefix/open-source-quartz-solar-forecast/discussions
+
+**When to Use:**
+- Architectural questions before coding
+- Brainstorming features
+- Asking for design feedback
+- Sharing ideas or research
+- General questions (not bugs)
+
+**Advantage:** Discussion threads are searchable, helping future contributors learn
+
+---
+
+### 4. Pull Requests (Code Contribution)
+
+**Location:** Repository Pull Requests tab
+
+**When to Use:**
+- Submitting code changes
+- Fixing bugs
+- Adding features
+- Updating documentation
+
+**Critical Rule:** Comment on the issue FIRST before submitting a PR. See section below.
+
+---
+
+## The "Comment First" Protocol
+
+### Why This Matters
+
+Open Climate Fix explicitly states:
+> "Comment on issues before starting work to prevent duplicates and ensure alignment with maintainers."
+
+**Without commenting first, you risk:**
+- Duplicating work already in progress
+- Building something that doesn't align with project direction
+- Creating a PR that gets rejected
+- Wasting your time and the reviewer's time
+
+### How to Comment First
+
+#### Step 1: Find an Issue
+
+```
+✓ Filter for "good first issue" label
+✓ Read the issue title and description carefully
+✓ Check if anyone else has already claimed it
+✓ Look at the comment history
+```
+
+#### Step 2: Post Your Comment
+
+**Template:**
+
+```markdown
+Hi @maintainer-name,
+
+I'm interested in working on this issue. Here's my understanding and proposed approach:
+
+## My Understanding
+[Explain what the issue is asking for in your own words]
+
+## Proposed Approach
+1. [Step 1 of your solution]
+2. [Step 2]
+3. [Step 3]
+
+## Questions
+- [Any clarification needed?]
+- [Constraints I should know about?]
+
+I'm planning to start this week and estimate completion by [date].
+Let me know if this aligns with your vision!
+```
+
+**Real Example:**
+
+```markdown
+Hi @jacobbieker,
+
+I'd like to help improve the timezone handling in the forecasting pipeline.
+I've identified some edge cases with DST transitions that could cause issues.
+
+## Understanding
+The issue is that timezone-aware datetimes don't consistently handle DST changes
+across different NWP data sources.
+
+## Proposed Approach
+1. Create test cases for DST transitions in test_timezone_utils.py
+2. Fix the timezone conversion logic in utils/timezone_utils.py
+3. Add documentation on timezone handling best practices
+4. Run full test suite to ensure no regressions
+
+## Questions
+- Should I handle both UTC and local timezone preferences?
+- Are there specific regions/DST rules I should prioritize?
+
+I'm planning to start this week. Thanks!
+```
+
+#### Step 3: Wait for Response
+
+**Response Timeline:**
+- Maintainers usually respond within 24-48 hours
+- If no response in 3-5 days, it's OK to follow up politely
+- Some issues may already be assigned (check comments)
+
+**Possible Responses:**
+1. **✅ "Go ahead!"** → You have clearance to proceed
+2. **⚠️ "Here's feedback..."** → Incorporate feedback and ask clarifying follow-ups
+3. **❌ "Thanks, but we're going in a different direction..."** → Appreciate the feedback, look for another issue
+4. **❓ "Can you also..."** → Clarify scope and confirm before proceeding
+
+#### Step 4: Create Your Branch
+
+Once approved, create a feature branch following OCF naming conventions:
+
+```bash
+# Example for timezone work
+git checkout -b fix/timezone-dst-handling
+
+# Example for new feature
+git checkout -b feature/tabpfn-adjuster
+
+# Example for documentation
+git checkout -b docs/accuracy-benchmarks
+```
+
+---
+
+## Issue Comment Templates
+
+### Template 1: Claiming a Simple Task
+
+**Use for:** Documentation, tests, small refactors
+
+```markdown
+Hi @maintainer,
+
+I'd like to work on this. Here's my plan:
+
+1. [Specific action 1]
+2. [Specific action 2]
+3. [Expected outcome]
+
+Timeline: [When you'll submit PR]
+
+Is there anything specific I should keep in mind?
+```
+
+### Template 2: Proposing a Larger Change
+
+**Use for:** Features, major refactors, new models
+
+```markdown
+Hi team,
+
+I'd like to tackle this issue with the following approach:
+
+## Problem Statement
+[What problem are we solving?]
+
+## Proposed Solution
+[Technical approach with architecture/code structure]
+
+## Expected Impact
+- [Benefit 1]
+- [Benefit 2]
+
+## Estimated Effort
+[Hours/days, or "unknown - will explore"]
+
+## Questions for Clarification
+- [Any design decisions I need your input on?]
+- [Dependencies or constraints?]
+
+Thoughts? Happy to adjust the approach based on feedback.
+```
+
+### Template 3: Asking for Design Feedback
+
+**Use for:** Before coding, when unsure about approach
+
+```markdown
+Hi @maintainers,
+
+I'm interested in implementing [feature/fix]. Before I write code,
+I wanted to get your feedback on the design:
+
+## Proposed Architecture
+[Describe the design at a high level]
+
+## Alternative Approaches
+1. [Alternative 1 - pros/cons]
+2. [Alternative 2 - pros/cons]
+
+## Questions
+- Which approach aligns better with the project?
+- Are there existing patterns I should follow?
+- Any foreseen issues with [approach]?
+
+Thanks for the guidance!
+```
+
+### Template 4: Following Up If No Response
+
+**Use if:** 48+ hours with no response
+
+```markdown
+Hi @maintainer-name,
+
+Just following up on my interest in working on this issue
+(comment from [date]). Is there anything else I can provide
+to help move forward?
+
+Looking forward to contributing!
+```
+
+---
+
+## Pull Request Guidelines
+
+### Before Submitting
+
+**Checklist:**
+- [ ] Commented on issue and received approval
+- [ ] Created feature branch with proper naming
+- [ ] Code follows project style (run linter)
+- [ ] Tests pass locally: `pytest`
+- [ ] Added tests for new functionality
+- [ ] Updated documentation if needed
+- [ ] Commits have clear messages
+- [ ] Reviewed your own PR first
+
+### PR Description Template
+
+```markdown
+## Description
+[Brief summary of what this PR does]
+
+## Related Issue
+Fixes #[issue number]
+
+## Type of Change
+- [ ] Bug fix
+- [ ] New feature
+- [ ] Breaking change
+- [ ] Documentation only
+
+## How Has This Been Tested?
+[Describe your testing approach]
+
+Example:
+- Added unit tests in test_adjuster.py
+- Tested with sites in 3 different timezones
+- Verified no regression in existing forecasts
+
+## Checklist:
+- [ ] My code follows the project's style guidelines
+- [ ] I have performed a self-review of my own code
+- [ ] I have commented my code, particularly in hard-to-understand areas
+- [ ] I have made corresponding changes to the documentation
+- [ ] My changes generate no new warnings
+- [ ] I have added tests that prove my fix/feature works
+- [ ] New and existing unit tests pass locally with my changes
+
+## Additional Notes
+[Anything else reviewers should know?]
+```
+
+### After Submitting
+
+**Engage Actively:**
+1. Respond to comments within 24 hours
+2. Ask for clarification if feedback is unclear
+3. Don't argue with reviewers—ask questions instead
+4. Make requested changes and push as new commits (don't force-push)
+5. Thank reviewers for their time
+
+**Example Response:**
+
+```markdown
+Thanks for the review! I've addressed your comments:
+
+- Updated the error handling logic per your suggestion
+- Added test case for edge case you identified
+- Refactored to remove unnecessary complexity
+
+All tests pass locally. Ready for another review!
+```
+
+---
+
+## GitHub Discussions Best Practices
+
+### When to Post
+
+**Good for Discussions:**
+- "I'm planning to add snow depth feature. Is this still needed?"
+- "What's the recommended way to add a new NWP source?"
+- "I found an interesting paper on forecast error adjustment. Should we explore this?"
+
+**Not good for Discussions:**
+- Bug reports (use Issues instead)
+- Code submission (use PRs instead)
+- Specific implementation questions (ask in Issue comments instead)
+
+### Discussion Template
+
+```markdown
+## Question
+[Your question clearly stated]
+
+## Context
+[Why are you asking? What are you trying to accomplish?]
+
+## What I've Already Tried
+[Show you've done some homework]
+
+## References
+[Links to relevant issues, papers, docs]
+
+## Thoughts?
+[What's your take or what guidance would help?]
+```
+
+---
+
+## Email Template: Initial Introduction
+
+### Scenario: First contact for GSoC interest
+
+```
+To: quartz.support@openclimatefix.org
+Subject: GSoC 2026 Interest - Solar Forecast Error Adjustment
+
+Hi Open Climate Fix Team,
+
+I'm [Your Name], a [background] developer based in [timezone],
+and I'm very interested in contributing to Open Climate Fix
+as part of Google Summer of Code 2026.
+
+## About Me
+- Background: [Your technical background]
+- Experience: [Relevant experience - Python, ML, etc.]
+- GitHub: [Your GitHub profile]
+- Timezone: [Your timezone for meeting scheduling]
+
+## Why OCF?
+[Genuine reason why this organization and project matter to you]
+
+Example: "I'm passionate about renewable energy and believe better
+solar forecasting is critical for grid integration. Your Quartz project
+is doing exactly that."
+
+## Proposed GSoC Project
+I'm interested in the "Adjuster This! TabPFN for Solar Forecast Error
+Adjustment" project. I've been exploring the codebase and have already:
+- Set up the development environment locally
+- Reviewed the architecture and main components
+- Started contributing with [documentation/timezone fixes]
+
+I believe this project aligns with my skills and interests.
+
+## Questions for You
+1. Is mentorship available for this project in GSoC 2026?
+2. Would you be open to discussing the project proposal in more detail?
+3. What's the best way to stay engaged with the team before the application deadline?
+
+I'm excited about the opportunity to contribute to climate action through better software!
+
+Best regards,
+[Your Name]
+[Your GitHub handle]
+[Your email]
+[Optional: Your LinkedIn or personal website]
+```
+
+---
+
+## Email Template: Progress Update
+
+### Scenario: During GSoC, giving a weekly update
+
+```
+To: quartz.support@openclimatefix.org
+Subject: GSoC Weekly Update - Week 3
+
+Hi [Mentor Name/Team],
+
+Here's my progress for Week 3 of the GSoC project:
+
+## Completed This Week
+- [ ] Implemented TabPFN model class (PR #123)
+- [ ] Trained baseline adjuster on historical data
+- [ ] Created evaluation metrics notebook
+
+## Current MAE
+- Raw forecast (GB): 0.19 kW
+- With adjuster: 0.17 kW (10% improvement) ✅
+
+## This Week's Challenges
+- [Challenge 1 and how I addressed it]
+- [Challenge 2 - still working on]
+
+## Next Week's Goals
+1. Integrate adjuster into FastAPI backend
+2. Create dashboard UI component
+3. Add comprehensive test suite
+
+## Questions/Blockers
+- [If any, describe and ask for guidance]
+
+Looking forward to our sync call on [day]!
+
+[Your Name]
+```
+
+---
+
+## Communication Etiquette
+
+### Do's ✅
+
+- **Be specific** — "My test fails on line 42" vs. "Tests don't work"
+- **Show effort** — Demonstrate you've tried to solve it yourself
+- **Be grateful** — Thank reviewers and contributors
+- **Ask questions** — Maintainers want to help if you ask clearly
+- **Be patient** — They're volunteers; be respectful of their time
+- **Respond promptly** — If they give feedback, respond within 24 hours
+- **Provide context** — Include error messages, code snippets, OS info
+- **Use code blocks** — Format code/errors with backticks ```code```
+
+### Don'ts ❌
+
+- **Don't assume** — Ask for clarification if feedback is unclear
+- **Don't argue** — Disagree respectfully; ask for reasoning
+- **Don't demand** — "Fix this bug now" vs. "Could this bug be addressed?"
+- **Don't spam** — Don't create duplicate issues or comments
+- **Don't go silent** — If you say you'll do something, follow through
+- **Don't submit unfinished work** — PR should be ready for review
+- **Don't ignore feedback** — Reviewers spent time; engage seriously
+- **Don't be discouraged** — Rejection doesn't mean you're not welcome
+
+---
+
+## Handling Criticism & Feedback
+
+### If Your Idea Gets Rejected
+
+**Scenario:** You propose a feature and they say "not interested"
+
+**Reaction Pattern:**
+1. **Take a breath** — It's feedback on the idea, not on you
+2. **Ask for reasoning** — "Thanks for the feedback. Can you help me understand the concern?"
+3. **Listen** — Actually listen to their reasoning
+4. **Adapt** — Apply learnings to your next proposal
+5. **Move on** — There are plenty of other issues
+
+**Example Response:**
+
+```markdown
+Thanks for considering this. I understand the concern about
+[their feedback]. This makes sense given [their reasoning].
+
+I'll look for other ways to contribute. Maybe I can start with
+[alternative issue] instead?
+```
+
+### If Your PR Gets Major Revision Requests
+
+**Scenario:** You submit a PR and get many requests for changes
+
+**Reaction Pattern:**
+1. **Don't take it personally** — Big changes mean it matters
+2. **Ask questions** — "Should I refactor X before Y, or together?"
+3. **Break it into chunks** — Request focus areas (1, 2, 3 of 5)
+4. **Communicate progress** — Push updates, tag for re-review
+5. **Keep a good attitude** — This is how you learn
+
+**Example Response:**
+
+```markdown
+Thanks for the detailed feedback! I can see the need for these
+changes. To make progress clear, I'll address them in this order:
+
+1. Refactor model class architecture (this commit)
+2. Update tests (next commit)
+3. Documentation updates (final commit)
+
+Pushing part 1 now. Looking forward to continued feedback!
+```
+
+---
+
+## Building Community Reputation
+
+### How Contributions Build Credibility
+
+**Small, consistent contributions → Community trust → Opportunities**
+
+**Reputation-Building Activities:**
+
+1. **Submit quality PRs** (even small ones)
+   - Well-tested, documented, clear messages
+   - Responsive to feedback
+
+2. **Answer others' questions** (in Discussions/Issues)
+   - "I had this problem too, here's how I fixed it"
+   - Help newer contributors
+   - Builds visibility
+
+3. **Create helpful documentation**
+   - Blog post about your learnings
+   - Improve existing docs
+   - Create examples/tutorials
+
+4. **Be responsive**
+   - Comment on your issues/PRs quickly
+   - Follow through on commitments
+   - Show up to meetings on time
+
+5. **Engage meaningfully**
+   - Thoughtful code reviews
+   - Substantive discussion comments
+   - Respect different viewpoints
+
+### Red Flags to Avoid
+
+- Radio silence after PR submission (days without response)
+- Ignoring feedback or being defensive
+- Claiming credit inappropriately
+- Contributing inconsistently then disappearing
+- Arguing about design decisions
+- Poor code quality or sloppy testing
+
+---
+
+## Sample Engagement Timeline
+
+### Month 1 (Before GSoC)
+
+**Week 1:**
+- Email introduction: quartz.support@openclimatefix.org
+- Set up development environment
+- Explore repository and architecture
+
+**Week 2-3:**
+- Find "good first issue" (documentation)
+- Comment: "I'd like to work on this, here's my plan"
+- Wait for approval (24-48 hours)
+
+**Week 4:**
+- Submit PR with documentation improvement
+- Actively respond to feedback
+- PR merged! 🎉
+
+**Week 5-6:**
+- Claim second issue (timezone fixes)
+- Submit PR with tests
+- Merged! Build credibility ✅
+
+**Week 7-8:**
+- Follow-up email with GSoC project proposal
+- Respond to feedback on proposal
+- Finalize GSoC application
+
+### Month 2-3 (GSoC Period)
+
+**Weekly:**
+- Push code commits to feature branch
+- Respond to feedback within 24 hours
+- Email weekly progress update to mentor
+
+**Bi-weekly:**
+- Sync call with mentor (video or Zoom)
+- Discuss blockers and next steps
+
+**Major Milestones:**
+- Week 2: Error analysis complete
+- Week 4: Model training successful
+- Week 7: API integration complete
+- Week 10: Testing complete
+- Week 12: Final PR submitted
+
+### Month 4+ (Post-GSoC)
+
+**Ongoing:**
+- Monitor adjuster for issues
+- Respond to user questions
+- Contribute to related features
+- Help newer contributors
+
+---
+
+## Troubleshooting Common Issues
+
+### Issue: I commented on an issue but got no response
+
+**What to do:**
+1. Wait 48-72 hours (they might be busy)
+2. Re-read the issue to make sure you understood it correctly
+3. Look for comments suggesting it's already assigned
+4. Post polite follow-up: "Any thoughts on my proposal above?"
+5. If still nothing after a week, try a different issue
+
+### Issue: My PR got rejected
+
+**What to do:**
+1. Read the rejection reason carefully
+2. Ask clarifying questions if confused
+3. Look for similar accepted PRs to understand what's wanted
+4. Don't argue; accept gracefully
+5. Try a different approach or different issue
+
+### Issue: I'm stuck on the technical work
+
+**What to do:**
+1. Try to solve it yourself first (search docs, StackOverflow)
+2. Comment on your feature branch PR: "I'm stuck on X, here's what I tried"
+3. Ask in GitHub Discussions: "Best way to implement feature X?"
+4. Email mentor if urgent: "I'm blocked on Y, can we discuss?"
+
+### Issue: Deadline pressure, can't finish GSoC work
+
+**What to do:**
+1. **Email mentor immediately** — Don't wait until the deadline
+2. Explain: "I'm on track for X, but Y is at risk"
+3. Propose revised scope: "What if we deprioritize Z?"
+4. Show what you CAN deliver
+5. Plan continuation post-GSoC
+
+---
+
+## Key Takeaway
+
+**The OCF community values:**
+- Clear communication
+- Respectful collaboration
+- Quality work
+- Consistency and follow-through
+- Learning and growth mindset
+
+By following these guidelines, you'll build strong relationships with the maintainers and become a valued community member.
+
+Good luck with your contributions! 🚀
