@@ -1,201 +1,148 @@
-# Accord Project: 5-Day Blitz Contribution Plan
+# Accord Project: AI-Augmented Contribution Plan
 
-**Project:** APAP & MCP Server Hardening
-**Mentors:** Niall Roche, Dan Selman
+**Priority:** #3 — Moderate competition, concerto repo is the opening
+**Project:** APAP and MCP Server Hardening
+**Mentors:** Dan Selman (@dselman), Jerome Simeon (@jeromesimeon)
 **Proposal deadline:** March 24, 2026
-**Stack:** TypeScript, Node.js, MCP, PostgreSQL, Jest
+**Stack:** TypeScript, Node.js, MCP, Jest
 
 ---
 
-## Day 1 — March 19: Land Fast
+## Why Accord is #3
 
-**Target:** First PR submitted and intro posted within the day.
+- Moderate competition (Divyansh2992 and yashhzd have some PRs but nothing overwhelming)
+- **concerto** has 26 open issues — less contested than cicero/template-archive
+- Recent merges: Windows path fix, test coverage — show maintainers DO merge external work
+- If GSoC 2026 officially lists Accord Project, this jumps in priority
+- JavaScript/TypeScript stack is Zakir's secondary language (behind Python/ML)
 
-### Hour-by-Hour
+---
 
-**08:00–09:00 — Environment**
+## Intelligence from REPO_INTELLIGENCE.md
+
+| Metric | Value |
+|--------|-------|
+| Active competitor threat | Moderate — Divyansh2992 (2 PRs), yashhzd (2 PRs) |
+| Recent merge rate | 4 external PRs in 2 weeks |
+| Mentor responsiveness | Days — not hours |
+| Best repo to target | **concerto** (26 issues, less contested) |
+| Secondary repo | template-archive (93 issues, more activity) |
+
+---
+
+## Competitor Map
+
+| Competitor | Their PRs | Threat Level | Counter |
+|-----------|----------|-------------|---------|
+| Divyansh2992 | 2 PRs: fix missing await, setReadme preserves logo | Medium | Work in concerto, not cicero |
+| yashhzd | 2 PRs: DEFLATE compression, circular inheritance | Medium-High | Avoid DEFLATE/compression areas |
+| Rahul-R79 | 1 merged: Windows path fix | Already merged | Cross-platform is still open — more issues? |
+| Drita-ai | 1 merged: test coverage | Already merged | More test coverage is still viable |
+| vermarjun | 1 open: reenable template signing | Medium | Check if you can help or complement |
+
+---
+
+## Target Issues
+
+### concerto (Primary Target)
+Browse: https://github.com/accordproject/concerto/issues
+
+26 open issues — scan for:
+- Test coverage gaps
+- Cross-platform compatibility (Windows / path normalization)
+- Type validation edge cases
+- Documentation improvements
+
+### template-archive (Secondary)
+Browse: https://github.com/accordproject/template-archive/issues (93 issues)
+- Lots of issues but also more competitors
+- Use only if concerto has nothing immediately accessible
+
+---
+
+## Day 1 — March 19: Setup + PR #1 (concerto)
+
+### Setup (07:00–08:00)
 ```bash
-git clone https://github.com/accordproject/techdocs.git
-git clone https://github.com/accordproject/template-playground.git
-git clone https://github.com/accordproject/template-engine.git
-cd template-playground && npm install
-cd ../template-engine && npm install
-cd ../techdocs && npm install
-```
-Verify `npm test` passes in all three repos.
-
-**09:00–10:30 — Issue Hunt**
-- Browse https://github.com/accordproject/techdocs/issues with `good-first-issue` label
-- Browse https://github.com/accordproject/template-playground/issues
-- Pick the single most bounded, most impactful issue. Ideal targets:
-  - Broken link in docs
-  - Missing example in a tutorial
-  - Template editor validation error message improvement
-  - A test that's missing for an existing function
-
-**10:30–12:00 — First PR**
-- Claim the issue with a comment: "I'd like to work on this as a GSoC 2026 applicant for MCP Server Hardening. Starting now — will have a draft PR shortly."
-- Create branch: `git checkout -b fix/issue-NNN-description`
-- Make the fix
-- `npm test && npm run lint && npm run build`
-- Push and open as Draft PR, then convert to Ready
-- Link the issue in the PR description
-
-**12:00–13:00 — Discord Intro**
-Post in `#technology-cicero` (Accord Project Discord):
-```
-Hi Accord community! I'm Zakir, CS student with ML/systems background
-(LangChain, LangGraph, Rust, TypeScript). Applying for GSoC 2026 on
-"APAP and MCP Server Hardening."
-
-Just submitted PR #NNN to [techdocs/template-playground] as my first
-contribution. Looking forward to diving deeper into the MCP server.
-
-Happy to contribute beyond GSoC — this intersection of legal contracts
-+ AI protocol is genuinely interesting work.
-
-GitHub: JiwaniZakir
+git clone https://github.com/accordproject/concerto.git
+git clone https://github.com/accordproject/template-archive.git
+cd concerto && npm install && npm test  # Verify pass
+cd ../template-archive && npm install && npm test
 ```
 
-**13:00–15:00 — Second Issue Research**
-- Identify a template-playground bug or template-engine test gap
-- Do NOT claim yet — read the code and understand the fix first
+### PR #1 — concerto issue (12:00–13:30)
 
-**15:00–17:00 — MCP Server Exploration**
-- Clone: `https://github.com/accordproject/apap-server` (or relevant MCP repo)
-- Read the existing MCP server implementation
-- Open ARCHITECTURE.md from this repo and cross-reference
-- Note 3 specific areas for hardening (error handling, input validation, missing tests)
+Browse concerto issues and claim the first good match.
 
-**17:00–19:00 — Proposal Skeleton**
-Write in PROPOSAL_DRAFT.md:
-- Synopsis (3 sentences)
-- 5 key deliverables (bullet points)
-- Top 3 technical questions to ask mentors
+**Claim comment:**
+```
+I'd like to work on this for GSoC 2026 (applying for APAP/MCP Server Hardening).
 
----
+I've reviewed the codebase and understand the scope.
+My approach:
+1. [Step 1 — specific to the issue]
+2. [Step 2]
+3. Test: [what the new test verifies]
 
-## Day 2 — March 20: Second Contribution
+Starting now — draft PR within 2 hours.
+```
 
-**Target:** Second PR submitted. Start technical dialogue with mentors.
-
-### Tasks
-
-**08:00–09:00** — Check PR #1 status. If there's feedback, address it immediately.
-
-**09:00–12:00** — **PR #2:** Target template-playground OR template-engine.
-- template-playground: bug fix in template editor, form validation, or loading state
-- template-engine: add a Jest test for an existing function that lacks coverage
 ```bash
-# Verify before submitting
-npm test
-npm run lint
-# Check coverage
-npm test -- --coverage
+cd concerto
+git checkout -b fix/issue-NNN-description
+# Make change
+npm test && npm run lint && npm run build  # All must pass
+git add [specific files]
+git commit -m "fix: [clear description]"  # Conventional commits
+git push origin fix/issue-NNN-description
 ```
-
-**12:00–14:00** — Post a technical question in `#technology-cicero`:
-```
-Hi @niall @dan.selman — I've been exploring the MCP server code
-and noticed [specific thing in a specific file]. Quick question:
-
-[Your specific technical question referencing file + line]
-
-Asking because I'm designing my GSoC proposal and want to make
-sure my testing approach aligns with how the server actually works.
-```
-
-**14:00–17:00** — Study APAP server code deeply:
-- Map out all REST endpoints
-- Note which ones lack input validation
-- Note which ones lack system tests
-- Document findings (add to ARCHITECTURE.md or private notes)
-
-**17:00–21:00** — Write full Problem Statement + Technical Approach in proposal
 
 ---
 
-## Day 3 — March 21: Substance
+## Day 2 — March 20: PR #2 (Second concerto or template-archive)
 
-**Target:** Third PR targeting MCP or APAP codebase directly. Proposal 80% complete.
+**Target:** Second PR in a different area of the codebase.
+Options:
+- Add Jest test for a function missing coverage in concerto
+- Fix a template-archive issue that hasn't been claimed
+- Cross-platform fix (Windows path normalization pattern from Rahul-R79's merged PR — are there more?)
 
-### Tasks
+```bash
+npm test -- --coverage  # Check coverage report to find gaps
+```
 
-**09:00–12:00** — **PR #3:** Target the APAP or MCP server directly.
+---
+
+## Day 3 — March 21: PR #3 (APAP/MCP direct)
+
+**Target:** PR touching the APAP server or MCP server — the actual GSoC project area.
+
+This is the most important PR for the proposal because it shows you can work in the specific code being hardened.
+
 Best targets:
-- Add a system test for an existing APAP endpoint
-- Add input validation to an endpoint that lacks it
-- Fix an inconsistent error response format
-- Add a missing JSDoc comment to a core function
-
-This is the most important PR — it's proof you can work in the actual GSoC project area.
+- Add a test for an existing APAP endpoint that lacks one
+- Add input validation to an endpoint using Zod
+- Improve error response consistency
 
 ```bash
-# Accord uses conventional commits
+cd apap-server  # or relevant repo
+npm test && npm run lint
 git commit -m "test: add system test for template compilation endpoint"
-# or
-git commit -m "fix: add input validation to /templates POST endpoint"
+# OR
+git commit -m "fix: add Zod input validation to /templates POST endpoint"
 ```
 
-**12:00–14:00** — Community: review 2 open PRs in Accord repos. Leave substantive comments.
+---
 
-**14:00–16:00** — Respond to any mentor feedback. If you got an answer to Day 2's question, post a follow-up showing you read and implemented the guidance.
+## Day 4 — March 22: Polish + Proposal
 
-**16:00–21:00** — Complete Timeline + Deliverables + About Me sections of proposal.
+Focus shifts to proposal writing. Only submit PR #3 in morning if not already done.
 
 ---
 
-## Day 4 — March 22: Polish + Write
+## PR Checklist
 
-**Target:** Contribution record polished. Proposal review-ready by EOD.
-
-### Tasks
-
-**09:00–11:00** — Address all PR feedback. Every comment gets a response.
-
-**11:00–13:00** — Post proposal draft outline in Discord. Ask:
-```
-Hi @niall @dan.selman — I've drafted an outline for my GSoC proposal
-on APAP/MCP Server Hardening. Key deliverables I'm planning:
-1. [Your deliverable 1]
-2. [Your deliverable 2]
-3. [Your deliverable 3]
-
-Does this align with what you'd most like to see accomplished?
-Any area I should prioritize differently?
-```
-
-**13:00–21:00** — Write the final proposal. See PROPOSAL_DRAFT.md.
-
----
-
-## Day 5 — March 23: Final Proposal
-
-**Target:** Proposal submit-ready. All PRs in clean state.
-
-### Tasks
-
-**09:00–12:00** — Final proposal pass: verify every deliverable is specific, every timeline week has a concrete output.
-
-**12:00–14:00** — Post in `#technology-cicero`: brief contribution summary + thank mentors.
-
-**14:00–17:00** — Address any last PR feedback. Verify CI is green on all open PRs.
-
-**17:00–20:00** — Submit proposal to GSoC platform.
-
----
-
-## March 24: Submit
-
-- Final check: all contribution links in proposal are live GitHub URLs
-- Submit on GSoC portal if not done March 23
-- Keep watching PR feedback — merges before selection announcement strengthen your candidacy
-
----
-
-## PR Checklist (Every PR)
-
-- [ ] Branch from correct base (`main` or `develop` — check repo)
+- [ ] Branch from `main` (verify — check repo default branch)
 - [ ] `npm test` passes locally
 - [ ] `npm run lint` passes (ESLint)
 - [ ] `npm run build` succeeds (TypeScript compiles)
@@ -208,15 +155,14 @@ Any area I should prioritize differently?
 
 ## Key Repositories
 
-| Repo | URL | Purpose |
-|------|-----|---------|
-| techdocs | accordproject/techdocs | Docs (50+ open issues) |
-| template-playground | accordproject/template-playground | React UI (91+ issues) |
-| template-engine | accordproject/template-engine | TypeScript core |
-| concerto | accordproject/concerto | Language support |
-| apap-server | accordproject/apap-server | **GSoC target** |
+| Repo | URL | Priority |
+|------|-----|----------|
+| concerto | accordproject/concerto | Primary (26 open issues, less contested) |
+| template-archive | accordproject/template-archive | Secondary (93 issues, more competitive) |
+| cicero (template-archive equivalent) | accordproject/cicero | Check if archived — use template-archive instead |
+| APAP server | Check GSoC 2026 org listing for exact repo | GSoC project area |
 
 ---
 
-**Last Updated:** March 19, 2026
-**Mode:** 5-day blitz
+**Last Updated:** March 19, 2026 (post-intelligence rewrite)
+**Priority:** #3 of 5

@@ -1,8 +1,245 @@
-# GreedyBear: Day-by-Day Engagement Guide
+# GreedyBear: Engagement Guide
 
-**Community:** Honeynet Project Discord
-**GitHub:** https://github.com/intelowlproject/GreedyBear
-**Mentors:** Matteo Lodi (backend), Tim Leonhard (frontend)
+**Priority:** #4 — Crowded, but ML layer is the opening
+**Community:** Honeynet Project Discord + GitHub Issues
+**Key contacts:** mlodic (@mlodic), regulartim (@regulartim)
+
+---
+
+## Intelligence Update (March 19)
+
+- **Most competitive per-star ratio** of all 5 repos: 10+ external PRs open simultaneously
+- 8 external PRs merged in 3 days (March 17–19)
+- mlodic reviews and merges SAME DAY when PRs are clean — fast feedback loop
+- **The opening:** ML model layer is untouched by competitors (all focused on frontend/backend fixes)
+- No CONTRIBUTING.md — follow recent merged PR patterns exactly
+
+---
+
+## Channels
+
+| Channel | URL | Notes |
+|---------|-----|-------|
+| **Honeynet Discord** | Check honeynet.org or repo README | Look for `#greedybear` or `#gsoc-2026` |
+| **GitHub Issues** | https://github.com/intelowlproject/GreedyBear/issues | Comment here to claim issues |
+| **GitHub PRs** | https://github.com/intelowlproject/GreedyBear/pulls | Monitor competition here |
+
+---
+
+## Mentor Profiles
+
+### mlodic (@mlodic)
+- 267 commits, core maintainer — backend
+- Reviews same day when PRs are clean
+- Timezone: Italy likely (Honeynet.org is Italy-based) — post 07:00–14:00 UTC
+- **Approach:** Clean PRs with filled templates get same-day reviews. Sloppy PRs get ignored.
+
+### regulartim (@regulartim)
+- 88 commits, core maintainer — frontend + infra
+- Working on uv migration (has a DRAFT PR open)
+- **Approach:** If you can contribute to the uv migration, this gets you regulartim attention
+
+---
+
+## Pre-Day-1: Unclaimed Issue Scan
+
+**Do this before posting an intro or claiming anything:**
+
+```bash
+# Get all open issues (numbers and titles)
+gh api "repos/intelowlproject/GreedyBear/issues?state=open&per_page=50" \
+  | jq '.[] | "\(.number): \(.title)"'
+
+# Get which issues are referenced in open PRs
+gh api "repos/intelowlproject/GreedyBear/pulls?state=open&per_page=50" \
+  | jq '.[] | .body' | grep -oE '(Closes|Fixes) #[0-9]+'
+
+# Cross-reference to find UNCLAIMED issues
+```
+
+**Already claimed (March 19 intelligence):**
+- #1089 — Prasad8830
+- #1087 — Aditya30ag
+- #1060 — R1sh0bh-1
+- #1034 — IQRAZAM
+- #987 — swara-2006
+- #852 — opbot-xd
+- #525 — lvb05 (country filter)
+
+---
+
+## Day 1 — March 19: Setup + First PR
+
+### Discord Intro (After First PR is Submitted)
+
+```
+Hi Honeynet team! I'm Zakir — Python/Django/security developer.
+Applying for GSoC 2026 on GreedyBear's Event Collector API.
+
+Background:
+- Merged to prowler-cloud/prowler (CORS config via environment variables) —
+  security-adjacent Django work, directly relevant to GreedyBear's stack
+- Built aegis (intelligence platform): Django/Celery async patterns similar
+  to GreedyBear's Django Q2 setup
+- Built evictionchatbot: Django REST API with authentication patterns
+
+Environment is running. Just submitted draft PR #[N] on issue #[unclaimed issue].
+
+GitHub: JiwaniZakir
+```
+
+**Reference the prowler-cloud/prowler merge prominently** — it's the most directly relevant credential for GreedyBear.
+
+---
+
+## Day 2 — March 20: ML Differentiation Signal
+
+### Post Technical Question for mlodic
+
+```
+Hi @mlodic — Event Collector API design question.
+
+I've studied the existing DRF ViewSets and the Django Q2 task setup.
+For EventCollectorToken (scope-based auth):
+
+Option A: Extend existing DRF TokenAuthentication
+- Pro: simpler, fewer migrations
+- Con: may create unintended coupling with existing token logic
+
+Option B: Separate EventCollectorToken model with its own auth class
+- Pro: clean isolation, enables per-token rate limiting
+- Con: additional migration
+
+My lean: Option B — the Event Collector has different rate limiting
+needs (injection frequency) than the honeypot read API. These shouldn't
+share a token model.
+
+Does this match your thinking?
+```
+
+### Signal ML Interest Early
+
+In a separate message or on a relevant issue:
+```
+I noticed drona-gyawali's PR just merged adding ML feature importances
+logging. I'm thinking about a follow-on: exposing the trained RF model's
+feature importances via a `/api/ml/feature-importances/` endpoint, so
+operators can see which signals drive classification through the API.
+
+Is this something the team would find valuable? Happy to open an issue
+to discuss before starting.
+```
+
+---
+
+## Day 3 — March 21: ML PR Attempt
+
+### Differentiation Move
+
+If you have bandwidth after PR #1 and #2, open an issue proposing the ML feature importances API endpoint. Get mlodic to comment before building it.
+
+```
+Opening this issue to propose: add a read-only API endpoint exposing the
+trained Random Forest model's feature importances.
+
+Use case: operators and developers want to understand which honeypot
+signal features are most predictive — currently this is only available
+in the logs (merged in drona-gyawali's recent PR), not programmatically.
+
+Proposed endpoint: GET /api/ml/feature-importances/
+Returns: [{"feature": "...", "importance": 0.34}, ...]
+
+Implementation: Load the serialized model → extract .feature_importances_ →
+return sorted by importance via DRF.
+
+cc @mlodic — does this align with where you'd like the ML API to go?
+```
+
+---
+
+## Day 4 — March 22: Proposal Share
+
+### Post to Discord or GitHub
+
+```
+Hi @mlodic @regulartim — GSoC proposal outline for Event Collector API:
+
+Backend:
+1. EventCollectorToken model (scope: events:write / events:read)
+2. DRF ViewSet with Serializer-based input validation
+3. Django Q2 async task: validate → normalize → index to Elasticsearch
+4. Rate limiting per token (django-ratelimit)
+5. Status endpoint: event processing tracking
+6. >80% test coverage for all new code
+
+Frontend (if scope allows):
+7. Token management CRUD UI
+8. Injection statistics dashboard
+
+Two questions:
+1. For ES indexing: separate index for injected events, or merge with T-Pot data?
+2. Frontend token management: in-scope for GSoC, or defer?
+
+Happy to share the full draft.
+```
+
+---
+
+## Day 5 — March 23: Final Summary
+
+```
+GSoC 2026 contribution summary (GreedyBear):
+
+PRs this week:
+- PR #[N]: [first issue fix] — [merged/in review]
+- PR #[N]: [second contribution] — [merged/in review]
+- PR #[N]: [ML endpoint or third fix] — [merged/in review]
+
+Submitting proposal tomorrow. Thanks @mlodic @regulartim for the
+rapid reviews and the responsive community.
+
+GitHub: JiwaniZakir
+```
+
+---
+
+## Response Templates
+
+### When mlodic Reviews Your PR
+
+```
+Thanks @mlodic — addressed all comments:
+
+1. [Comment]: [Specific change]. The ruff format issue was in [file] — fixed.
+2. [Comment]: [What you changed] — PR template updated with test output.
+3. [Comment]: Good catch. Added test for [edge case].
+
+Ruff clean, pre-commit passes, manage.py test: [X] tests pass.
+Ready for re-review!
+```
+
+---
+
+## What NOT to Do in GreedyBear
+
+1. **Never submit a PR without filling the template completely** — mlodic will close without review
+2. **Never work on an issue that already has a linked PR** — scan for this before claiming
+3. **Never skip ruff format** — CI will fail and block review
+4. **Never copy AI code verbatim** — GreedyBear's informal rules include this
+5. **Never open a PR without a draft within a week of claiming** — auto-unassignment
+
+---
+
+## Zakir's Edge for GreedyBear
+
+- **prowler-cloud/prowler merge**: CORS config via env vars in a Django security tool — directly relevant
+- **aegis**: Django/Celery async = same pattern as Django Q2
+- **sentinel**: Slack bot with security event handling = community management + security overlap
+- Security domain knowledge = fits GreedyBear's threat intelligence mission
+
+---
+
+**Last Updated:** March 19, 2026 (post-intelligence rewrite)
 
 ---
 

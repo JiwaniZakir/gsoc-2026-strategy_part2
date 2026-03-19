@@ -1,5 +1,6 @@
-# VulnerableCode: 5-Day Blitz Contribution Plan
+# VulnerableCode: AI-Augmented Contribution Plan
 
+**Priority:** #1 — Biggest GSoC opportunity in the entire analysis
 **Project:** NLP/ML Vulnerability Detection from Unstructured Data
 **Organization:** AboutCode
 **Proposal deadline:** March 24, 2026
@@ -7,224 +8,215 @@
 
 ---
 
-## CRITICAL RULES
+## Why VulnerableCode is #1
 
-1. **Sign the DCO** before your first commit: `git commit -s`
-2. **Comment on issue first** — "I'd like to work on this" before starting any code
-3. **Run `black` and `isort`** before every commit
-4. **Run `pytest`** locally before submitting any PR
-5. **All tests must pass** — open issues for failures you find, don't just work around them
+- **756 open issues** — massive unclaimed work
+- Competitors (NucleiAv, Tednoob17) are doing the WRONG thing: adding importers
+- Core team is merging API changes, architecture work — NOT importers
+- ziadhany (regular contributor) got merged doing exactly this: "Add API and UI support for vulnerability rules"
+- Python/Django stack matches Zakir's strongest skills
 
 ---
 
-## Day 1 — March 19: Setup + DCO + First Issue
+## CRITICAL RULES
 
-### Hour-by-Hour
+1. **Sign the DCO** before your first commit: `git commit -s`
+2. **Comment on issue first** — before writing any code
+3. **Run `black` and `isort`** before every commit
+4. **Run `pytest`** locally before every PR
+5. **NEVER add a new importer** — this pattern is saturated and not getting merged
+6. **Target:** API features, UI improvements, tests, architecture improvements
 
-**08:00–09:30 — Environment Setup**
+---
+
+## Unclaimed Issue Targets (From Intelligence Analysis)
+
+| Issue | Type | Difficulty | Why It's Good |
+|-------|------|-----------|---------------|
+| Sort packages/vulnerabilities newest-to-oldest | API/UI | Easy | Nobody has touched this, directly visible |
+| Improve "Severities vectors" tab | UI | Easy/Medium | UI work, different from importer crowd |
+| Collect data from Anchore NVD overrides | Data source | Easy | Different from vendor importer pattern |
+| Add CURL advisories data source | Data source | Easy | Unclaimed, simple pattern |
+| Use centralized function for all network access | Architecture | Intermediate | High-value, nobody has claimed this |
+| Add tests for Docker | Dev-env | Easy | Testing is always valued |
+| Add data in CSAF format from cisagov/CSAF | Data | Medium | Good first issue + GSoC 24 label |
+| Ingest github ecosystems | Data | Medium | Medium complexity, different from vendor advisories |
+
+---
+
+## Day 1 — March 19: First 2 PRs
+
+### Setup (07:00–08:00)
 ```bash
 git clone https://github.com/aboutcode-org/vulnerablecode.git
 cd vulnerablecode
-# Install dependencies
 pip install -r requirements.txt
 python manage.py migrate
-# Verify tests pass
-pytest
-# Setup code quality tools
+pytest  # Verify all pass
 pip install black isort
 black --check .
 isort --check .
 ```
 
-**09:30–10:00 — DCO Setup**
-```bash
-# Configure git for signed commits (required by AboutCode)
-git config --global user.name "Zakir Jiwani"
-git config --global user.email "jiwzakir@gmail.com"
+### PR #1 — "Sort packages newest-to-oldest" (08:00–10:00)
 
-# Add sign-off hook (auto-signs future commits)
-# All commits need -s: git commit -s -m "message"
-```
+**Issue location:** Open issues, `difficulty:easy` + `ui` labels
+**What to change:**
+- Find the PackageViewSet in the API
+- Add default ordering (`-updated_at` or `-created_at`) to the queryset
+- Do the same for VulnerabilityViewSet
+- Add a test asserting sort order
 
-**10:00–11:30 — Issue Hunt**
-
-Browse: `https://github.com/aboutcode-org/vulnerablecode/issues`
-
-Best first targets:
-- `good-first-issue` label
-- Documentation improvements
-- Missing tests for existing importers
-- Small bug fixes in importers
-
-Ideal first PR: Add a test for an existing importer function that lacks coverage. This is directly relevant to the NLP project (you'll need to write similar tests for the NLP pipeline).
-
-**11:30–12:00 — Claim Issue**
+**Claim comment:**
 ```
 I'd like to work on this as a GSoC 2026 applicant (NLP/ML vulnerability
 detection project).
 
-I've reviewed the codebase and understand the scope. My approach:
-1. [Step 1]
-2. [Step 2]
-3. Test: [specific test behavior]
+My approach:
+1. Add `ordering = ['-updated_at']` to PackageViewSet queryset
+2. Same for VulnerabilityViewSet
+3. Add API test verifying newest records appear first in response
 
+DCO: I'll sign off all commits with -s flag.
 Starting now.
 ```
 
-**12:00–14:00 — First PR**
 ```bash
-git checkout -b fix/issue-NNN-description main
-# Make the change
-black .
-isort .
-pytest tests/  # Run relevant tests
+git checkout -b fix/sort-packages-newest-first main
+# Make changes
+black . && isort .
+pytest tests/  # Full suite
+git add [specific files only]
+git commit -s -m "fix: sort packages and vulnerabilities newest-first in API"
+git push origin fix/sort-packages-newest-first
+```
+
+### PR #2 — "Use centralized function for all network access" (10:30–12:30)
+
+**Issue location:** `difficulty:intermediate` label
+**This is the high-value PR** — shows architectural thinking vs. importer spam
+
+**What to change:**
+- Create `utils/network.py` with a `fetch_url(url, timeout=30, retries=3)` function
+- Migrate 2–3 importers to use it (don't need to migrate all — establish the pattern)
+- Add tests for the utility function with mock responses
+
+```bash
+git checkout -b feat/centralized-network-access main
+# Create the utility, migrate 2-3 importers
+black . && isort .
+pytest tests/
 git add [specific files]
-git commit -s -m "fix: [clear description]"
-git push origin fix/issue-NNN-description
+git commit -s -m "feat: add centralized network access utility with retry logic"
+git push origin feat/centralized-network-access
 ```
-
-Open PR. Use conventional commit format. Explain what and why.
-
-**14:00–15:00 — Community Intro**
-
-Post in AboutCode community (IRC/Matrix or GitHub Discussions):
-```
-Hi AboutCode team! I'm Zakir, ML/AI developer (LangChain, LangGraph,
-transformers, spaCy). Applying for GSoC 2026 on NLP/ML vulnerability
-detection.
-
-I've contributed to RAG evaluation systems (spectra) and multi-agent
-frameworks (lattice) — both involve similar extraction + confidence
-scoring problems to what the VulnerableCode NLP project needs.
-
-Just submitted PR #NNN on [issue]. Working through the codebase.
-
-GitHub: JiwaniZakir
-```
-
-**15:00–17:00 — NLP Research**
-
-Study the existing importer framework:
-- Read `/vulnerabilities/importers/` — how are importers structured?
-- Read `/vulnerabilities/models.py` — what fields matter?
-- Understand the existing data pipeline
-
-Note: What text fields exist that could be used for NLP extraction? (CVE descriptions, advisory text, etc.)
-
-**17:00–19:00 — Proposal Skeleton**
-
-Write in PROPOSAL_DRAFT.md: synopsis, problem statement, NLP pipeline architecture outline.
 
 ---
 
-## Day 2 — March 20: Second PR + NLP Design Thinking
+## Day 2 — March 20: PRs #3 and #4
 
-**Target:** Second PR submitted. Technical NLP architecture question asked.
+**08:00–08:30:** Respond to any overnight feedback on PRs #1/#2.
 
-### Tasks
+### PR #3 — "Improve Severities vectors tab" (08:30–11:00)
 
-**08:00–09:00** — Address Day 1 PR feedback immediately.
+**Issue location:** `difficulty:easy` + `ui` labels
+**What to change:** Frontend Django template or API for the Vulnerability detail page
 
-**09:00–12:00** — **PR #2: Importer Test or Small Feature**
-
-Best targets:
-- Add tests for an existing importer that has low coverage
-- Fix a small validation bug in an existing importer
-- Improve error handling in one importer
-
-This doubles as NLP prep — understanding importer structure is essential for designing the NLP importer.
-
-**12:00–14:00** — Post a technical question to the community:
-```
-Hi — working on my GSoC proposal for NLP vulnerability detection.
-
-I've been studying the importer framework and noticed that importers
-follow a pattern of: [your observation about the pattern].
-
-For the NLP importer I'm designing, the key question is:
-Should NLP-extracted vulnerabilities go through the same importer
-interface, or does the confidence scoring require a separate pipeline
-with a different status field?
-
-My instinct: same importer interface but with a new `confidence_score`
-field on the output, so NLP-extracted data is visually distinct
-but uses the same deduplication logic.
-
-Does this align with how the team is thinking about it?
+```bash
+git checkout -b feat/improve-severities-tab main
 ```
 
-**14:00–17:00** — Study NLP requirements:
-- What fields need to be extracted? (CVE ID, package name, version range, severity)
-- What models are suitable? (spaCy NER, HuggingFace transformers, regex + ML hybrid)
-- What does "confidence scoring" look like in practice?
+### PR #4 — "Add tests for Docker" (11:00–13:00)
 
-**17:00–21:00** — Write full Technical Approach in proposal.
+**Issue location:** `dev-env` label
+**What to change:** Add pytest tests verifying Docker development environment setup
 
----
-
-## Day 3 — March 21: More Substance
-
-**Target:** Third PR + proposal 80% complete.
-
-### Tasks
-
-**09:00–12:00** — **PR #3: More substantial contribution**
-
-Options:
-- Improve an existing importer to handle more edge cases
-- Add a new small importer for a data source you've researched
-- Add comprehensive tests to an undertested module
-
-**12:00–14:00** — Community: review 2 open PRs. Leave substantive comments.
-
-**14:00–16:00** — Mentor outreach: ask a specific question about the NLP pipeline design.
-
-**16:00–21:00** — Complete Timeline + Deliverables + About Me in proposal.
+```bash
+git checkout -b test/docker-dev-environment main
+```
 
 ---
 
-## Day 4 — March 22: Polish
+## Day 3 — March 21: PR #5
 
-**Target:** Proposal review-ready.
+### PR #5 — "Add CURL advisories data source" (08:30–10:30)
 
-### Tasks
+**Note:** This is different from the importer spam — CURL is a widely-used library with official security advisories. Frame it as completing a data source, not adding another vendor importer.
 
-**09:00–11:00** — Address all PR feedback.
+```bash
+git checkout -b feat/curl-advisories-source main
+```
 
-**11:00–13:00** — Post proposal outline to community for feedback.
-
-**13:00–21:00** — Final proposal polish.
-
----
-
-## Day 5 — March 23: Submit
-
-**Target:** Proposal submitted. All PRs in clean state.
+**After submitting:** Post proposal outline to Gitter/GitHub Discussions.
 
 ---
 
-## PR Checklist
+## Day 4 — March 22: PR #6 + Proposal
 
-- [ ] DCO signed: commit has `-s` flag (adds `Signed-off-by: Name <email>`)
+### PR #6 — "Ingest GitHub ecosystems" or API endpoint improvement (09:00–11:00)
+
+By now you have 5 PRs in the queue. One or more should be merged or close to it.
+Pick the most strategic remaining issue and submit a final PR before switching to full proposal mode.
+
+**13:00–21:00:** Finalize proposal. This is the most important deliverable today.
+
+---
+
+## PR Checklist (Every PR)
+
+- [ ] DCO signed: commit has `-s` flag (adds `Signed-off-by: Zakir Jiwani <jiwzakir@gmail.com>`)
 - [ ] `black .` passes
 - [ ] `isort .` passes
-- [ ] `pytest` passes
-- [ ] PR description: clear what + why
-- [ ] Issue linked
+- [ ] `pytest` passes locally
+- [ ] Not an importer — verify your PR is not just "Add [X] importer"
+- [ ] Issue commented before starting work
+- [ ] PR description: clear what + why + how tested
+- [ ] Issue linked: `Closes #NNN`
 - [ ] No unrelated changes
 
 ---
 
-## Key VulnerableCode Resources
+## Competitor Awareness
+
+| Competitor | Their PRs | Are They a Threat? | Action |
+|-----------|----------|-------------------|--------|
+| NucleiAv | 6 importer PRs — NONE merged | Low (doing wrong thing) | Don't copy their approach |
+| Tednoob17 | 3 importer PRs — NONE merged | Low (doing wrong thing) | Don't copy their approach |
+| ziadhany | "Add API/UI for vulnerability rules" — 1 merged | Medium | They're doing the right thing — study their approach |
+
+**Key insight:** The "add an importer" path is saturated AND the core team isn't merging them. Do what ziadhany is doing: API/UI/architecture features.
+
+---
+
+## Target Issue Numbers (From Intelligence)
+
+From REPO_INTELLIGENCE.md — good first issues available:
+- UI/API sort order (newest-to-oldest)
+- Severities vectors tab improvement
+- Anchore NVD overrides
+- CSAF format from cisagov/CSAF (labeled GSoC 24 + good first issue)
+- CURL advisories
+- GitHub ecosystems ingestion
+- Centralized network access function
+- Docker dev environment tests
+
+**Note:** Always verify these issues are still open and unclaimed before starting. Run:
+```bash
+gh api "repos/aboutcode-org/vulnerablecode/issues/[number]" | jq '.state, .title'
+```
+
+---
+
+## Key Resources
 
 | Resource | URL |
 |----------|-----|
 | Repository | https://github.com/aboutcode-org/vulnerablecode |
 | Issues | https://github.com/aboutcode-org/vulnerablecode/issues |
-| NVD feed | Starting point for understanding data formats |
-| spaCy docs | https://spacy.io/usage/linguistic-features |
+| CONTRIBUTING.rst | https://github.com/aboutcode-org/vulnerablecode/blob/main/CONTRIBUTING.rst |
+| Gitter | https://gitter.im/aboutcode-org/vulnerablecode |
 
 ---
 
-**Last Updated:** March 19, 2026
-**Mode:** 5-day blitz
+**Last Updated:** March 19, 2026 (post-intelligence rewrite)
+**Priority:** #1 of 5

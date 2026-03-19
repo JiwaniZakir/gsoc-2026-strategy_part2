@@ -1,8 +1,210 @@
-# dora-rs: Day-by-Day Engagement Guide
+# dora-rs: Engagement Guide
 
-**Community:** dora-rs Discord
-**GitHub:** https://github.com/dora-rs/dora
-**GSoC Wiki:** https://github.com/dora-rs/dora/wiki/GSoC_2026
+**Priority:** #5 — Minimum investment, Python/docs only
+**Community:** dora-rs Discord + GitHub Discussions
+**Key contacts:** phil-opp (@phil-opp), haixuanTao (@haixuanTao)
+
+---
+
+## Intelligence Update (March 19) — READ FIRST
+
+**Bhanudahiyaa** submitted 9 PRs in 48 hours:
+- coordinator KV store, state persistence, CLI enforcement, OpenTelemetry
+- 3 already merged
+- They are systematically building a coherent feature set as a GSoC proposal in action
+
+**Your strategy:** Python bindings only. Do not compete with Bhanudahiyaa on Rust/CLI/state.
+
+**Bhanudahiyaa-free zones:**
+- Python bindings (pyo3 experimental-inspect stubs)
+- Getting Started documentation
+- Progress bars (CLI UX, not architecture)
+- Python operator API bugs
+
+---
+
+## Channels
+
+| Channel | URL | Notes |
+|---------|-----|-------|
+| **Discord** | Find invite in README | Join `#gsoc-2026` |
+| **GitHub Discussions** | https://github.com/dora-rs/dora/discussions | For design RFCs |
+| **GitHub Issues** | https://github.com/dora-rs/dora/issues | Use `@dora-bot assign me` |
+
+---
+
+## Mentor Profiles
+
+### phil-opp (@phil-opp)
+- 1,940 commits — famous Rust blogger (blog.phil-opp.com)
+- Reviews within HOURS — fastest reviewer of all 5 projects
+- **Approach:** Your PR will be reviewed fast. Be ready to respond to feedback quickly.
+- Tag as `@phil-opp` in issues/discussions
+
+### haixuanTao (@haixuanTao)
+- 1,854 commits — Python/robotics focus likely
+- Good for: Python binding questions, robotics use cases
+- **Approach:** For Python-specific questions, haixuanTao may be more relevant than phil-opp
+
+---
+
+## Day 2 — March 20: First (and Likely Only) PR
+
+**No Day 1 activity here** — Day 1 is fully allocated to vulnerablecode, OCF, and Accord. Come to dora-rs on Day 2 after the first wave of PRs is submitted elsewhere.
+
+### Step 1: Scan for Open Python Issues
+
+```bash
+gh api "repos/dora-rs/dora/issues?labels=python&state=open&per_page=20" \
+  | jq '.[] | "\(.number): \(.title)"'
+
+gh api "repos/dora-rs/dora/issues?labels=good-first-issue&state=open&per_page=20" \
+  | jq '.[] | "\(.number): \(.title)"'
+```
+
+### Step 2: Claim with @dora-bot
+
+On your chosen issue:
+```
+@dora-bot assign me
+
+I'll work on [specific issue description]. This is the Python-side
+implementation — focusing on pyo3 stubs/Python operator API.
+
+Estimated timeline: 1–2 days. Draft PR within 24h.
+```
+
+### Step 3: Discord Intro (After PR is Submitted)
+
+Post in `#gsoc-2026`:
+```
+Hello dora-rs community! I'm Zakir, applying for GSoC 2026 on
+Testing Infrastructure.
+
+Background: Built 338-test pytest suite for a FastAPI service (aegis)
+and testing infrastructure for a multi-agent framework (lattice).
+Python is my primary language — focusing on the Python bindings
+side of the testing utilities.
+
+Just submitted PR #[N] on [pyo3 stubs / Python operator issue].
+
+GitHub: JiwaniZakir
+```
+
+---
+
+## Day 2 (Late): Technical Question for phil-opp
+
+Post in `#gsoc-2026` or as a GitHub Discussion:
+```
+Hi @phil-opp — design question for the Testing Infrastructure proposal
+(Python side specifically).
+
+For MockNode in the Python API:
+Option A: Mock at the Python operator level (before Arrow serialization)
+  — simpler for test authors, less faithful to real execution
+Option B: Mock at the IPC/Arrow level (after serialization)
+  — more faithful, but requires understanding Arrow schema
+
+My instinct: two-tier — Option A for unit tests, Option B for integration
+tests. The dora-test-utils Python package would expose both.
+
+Does this make sense given how the Python bindings actually work?
+```
+
+---
+
+## Day 3 — March 21: Design Issue (GitHub, Not Discord)
+
+Create a GitHub issue titled: `[RFC] Python Testing Utilities Design — GSoC 2026`
+
+This creates a public record of your design thinking and gives phil-opp and haixuanTao a concrete artifact to respond to — more durable than a Discord message.
+
+Template in [CONTRIBUTION_PLAN.md](./CONTRIBUTION_PLAN.md).
+
+---
+
+## Day 4 — March 22: Proposal Share
+
+Post in `#gsoc-2026`:
+```
+GSoC proposal outline for feedback (Testing Infrastructure — Python focus):
+
+1. dora-test-utils crate: MockNode + TestFixture
+2. Python test bindings: PyMockNode with equivalent API
+3. CI template: GitHub Actions for Python dataflow testing
+4. 10+ regression tests for critical Python dataflows
+5. Docs: "How to Test Python dora Nodes" guide
+
+Python-first angle: Python node developers currently have no mocking
+or fixture utilities. This proposal builds the testing layer they need
+without duplicating the Rust testing work.
+
+Does this scope feel right? Any re-prioritization suggested?
+```
+
+---
+
+## Day 5 — March 23: Final Summary
+
+```
+GSoC contribution summary (dora-rs):
+
+PR this week:
+- PR #[N]: [pyo3 stubs / Python issue] — [status]
+- Design RFC: [link to GitHub issue]
+
+Submitting proposal tomorrow. Thanks @phil-opp for the fast review!
+
+GitHub: JiwaniZakir
+```
+
+---
+
+## Response Templates
+
+### When phil-opp Reviews Your PR (Fast — Be Ready)
+
+```
+Thanks @phil-opp — addressed feedback:
+
+1. [Comment]: [What you changed]. cargo fmt --all — clean.
+2. [Comment]: [What you changed]. cargo clippy — no warnings.
+3. [Comment]: Good call — I changed approach to [X] because [reason
+   that shows you understood the feedback].
+
+cargo test --workspace: all pass. CI green. Ready for re-review!
+```
+
+---
+
+## Handling Bhanudahiyaa's Presence
+
+Do NOT:
+- Comment on their PRs competitively
+- Open issues in the same feature areas
+- Acknowledge the competition in community messages
+
+DO:
+- Simply work in your lane (Python/docs)
+- Let your Python contributions speak for themselves
+- If you're in a Discord discussion and Bhanudahiyaa is present, engage technically and professionally
+
+---
+
+## Proposal Framing — Why Python Testing is the Gap
+
+> "dora-rs has a strong Rust testing story but the Python operator ecosystem has no equivalent. Python is the primary language for ML/robotics node development, yet there's no MockNode, no TestFixture, and no CI template that works with Python dataflows. This GSoC project closes the Python testing gap specifically, serving the robotics and AI node developers who primarily write Python."
+
+This framing:
+1. Doesn't conflict with any of Bhanudahiyaa's work
+2. Addresses a real and documented gap
+3. Uses Zakir's Python strength
+4. Is a coherent, bounded scope
+
+---
+
+**Last Updated:** March 19, 2026 (post-intelligence rewrite)
 **Mentors:** Alex Zhang, ZunHuan Wu
 
 ---

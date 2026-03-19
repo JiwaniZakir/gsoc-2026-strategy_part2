@@ -1,246 +1,171 @@
-# GreedyBear: 5-Day Blitz Contribution Plan
+# GreedyBear: AI-Augmented Contribution Plan
 
+**Priority:** #4 — Crowded but viable if you find unclaimed territory
 **Project:** Event Collector API
-**Mentors:** Tim Leonhard (frontend), Matteo Lodi (backend)
+**Mentors:** Matteo Lodi (@mlodic), Tim Leonhard (@regulartim)
 **Proposal deadline:** March 24, 2026
-**Stack:** Python, Django, DRF, PostgreSQL, Elasticsearch, Django Q2
+**Stack:** Python, Django, DRF, PostgreSQL, Elasticsearch, Django Q2, React
 
 ---
 
-## CRITICAL RULES (Non-Negotiable)
+## Why GreedyBear is #4 (Not Higher)
 
-1. **Get assigned before coding** — comment "I'd like to work on this" and wait
+From COMPETITOR_ANALYSIS.md:
+- 10+ external PRs open simultaneously — most competitive per-star ratio of all 5 repos
+- 8 external PRs merged in 3 days (March 17–19)
+- drona-gyawali, rootp1, cclts already have high-quality merges
+- BUT: ML model improvements are less contested
+- BUT: mlodic reviews and merges same day — fast feedback loop
+
+**The path in:** Find unclaimed issues, or work in the ML model layer which competitors have ignored in favor of frontend/backend fixes.
+
+---
+
+## CRITICAL RULES
+
+1. **Scan for unclaimed issues BEFORE claiming anything** — check no linked PR exists
 2. **Branch from `develop`**, never `main`
-3. **Ruff must pass** before every commit: `ruff check . --fix && ruff format .`
-4. **Draft PR within 1 week** of assignment — auto-unassign otherwise
-5. **No AI copy-paste** — maintainers will reject it
-6. **Fill PR template completely** — blank sections = rejection
+3. **Ruff must pass**: `ruff check . --fix && ruff format .`
+4. **Fill PR template completely** — blank sections = rejection
+5. **Draft PR within 1 week** of assignment — auto-unassign otherwise
+6. **No raw AI paste** — GreedyBear's informal rules include this
 
 ---
 
-## Day 1 — March 19: Environment + First Issue
+## How to Find Unclaimed Issues
 
-### Hour-by-Hour
+```bash
+# Get all open issues
+gh api "repos/intelowlproject/GreedyBear/issues?state=open&per_page=50" \
+  | jq '.[] | {number: .number, title: .title}'
 
-**08:00–09:30 — Environment Setup**
+# Get all open PRs and extract which issues they close
+gh api "repos/intelowlproject/GreedyBear/pulls?state=open&per_page=50" \
+  | jq '.[] | .body' | grep -oE 'Closes #[0-9]+|Fixes #[0-9]+'
+
+# Issues WITH open PRs (skip these):
+# From REPO_INTELLIGENCE.md: #1089, #1087, #1060, #1034, #987, #852, #525
+```
+
+**Issues already claimed (per March 19 intelligence):**
+- #1089 — Feeds filter state (Prasad8830)
+- #1087 — training_data validation (Aditya30ag)
+- #1060 — Custom labels/descriptions in Sensor model (R1sh0bh-1)
+- #1034 — cronjob exception propagation (IQRAZAM)
+- #987 — useAuthStore test (swara-2006)
+- #852 — ASN aggregates (opbot-xd)
+
+**Strategy:** Browse issues < #852 and > #1089 for unclaimed work.
+
+---
+
+## ML Model Improvement — The Differentiator
+
+The competitors are all doing frontend/backend fixes. The Random Forest ML model layer is underserved.
+
+**What's available:**
+- `drona-gyawali` just merged "Log feature importances after RF training" — but the API doesn't expose importances
+- Adding a `/api/ml/feature-importances/` endpoint would be natural follow-on work
+- XGBoost or other model alternatives vs. Random Forest — analysis + implementation
+- Hyperparameter tuning pipeline
+- Model evaluation metrics endpoint
+
+**This differentiates from all current competitors and is directly relevant to the GSoC project.**
+
+---
+
+## Day 1 — March 19: Setup + PR #1
+
+### Setup (07:00–08:00)
 ```bash
 git clone https://github.com/intelowlproject/GreedyBear.git
 cd GreedyBear
-# Start the dev stack
 ./gbctl init --dev --elastic-local
-# Verify containers running
-docker ps | grep greedybear
-# Install pre-commit hooks
+docker ps | grep greedybear  # Verify running
 pip install pre-commit
 pre-commit install -c .github/.pre-commit-config.yaml
-# Run tests to verify setup
-docker exec greedybear_uwsgi python3 manage.py test
+docker exec greedybear_uwsgi python3 manage.py test  # Verify all pass
 ```
 
-**09:30–11:00 — Codebase Orientation**
-- Read `/docs/ARCHITECTURE.md` and `/CONTRIBUTING.md`
-- Explore `/greedybear/api/` — understand existing ViewSets and serializers
-- Read issues #1083, #1089, #1085, #1073 carefully
-- Pick the most bounded issue to claim
+### PR #1 — First Unclaimed Issue (13:00–15:00)
 
-**Issue Priority for Day 1:**
-- #1083 (None session_id handling) — low complexity, bug fix, 2–4 hours
-- #1089 (Feeds filter enhancement) — small API feature, 4–6 hours
+After running the unclaimed issue scan above, pick the most accessible open issue.
 
-**11:00–13:00 — Claim Issue + Start Work**
+**Claim comment template:**
 ```
-Comment on issue:
-"I'd like to work on this for GSoC 2026 (applying for Event Collector API).
-I've read the codebase and understand the scope.
+I'd like to work on this for GSoC 2026 (applying for Event Collector API).
 
+I've reviewed the codebase and understand the scope.
 My approach:
-1. [Step 1 — specific]
-2. [Step 2 — specific]
-3. Add test for [specific behavior]
+1. [Step 1 — specific to the issue]
+2. [Step 2]
+3. Test: [specific test behavior]
 
-Starting now — will have a draft PR up within a couple hours."
+Starting now — draft PR within 2 hours.
 ```
-
-Create branch:
-```bash
-git checkout develop
-git pull origin develop
-git checkout -b fix/issue-1083-session-id develop
-```
-
-Make the fix, write the test.
-
-**13:00–14:30 — Code Quality Pass**
-```bash
-ruff check . --fix
-ruff format .
-pre-commit run --all-files
-docker exec greedybear_uwsgi python3 manage.py test
-```
-
-**14:30–15:00 — Create Draft PR**
-```bash
-git push origin fix/issue-1083-session-id
-```
-Open PR, mark as **Draft**, fill PR template completely. Link issue.
-
-**15:00–16:00 — Discord Intro**
-Post in Honeynet Discord `#gsoc-2026` or `#greedybear`:
-```
-Hi Honeynet community! I'm Zakir — backend developer with Python/Django
-background (FastAPI, Celery, PostgreSQL). Applying for GSoC 2026 on
-GreedyBear's Event Collector API.
-
-I've been working on security-adjacent projects — aegis (personal
-intelligence platform) and evictionchatbot (AI legal chatbot). GreedyBear's
-threat intelligence angle genuinely interests me.
-
-Just submitted draft PR #NNN on issue #1083. Environment is running.
-
-GitHub: JiwaniZakir
-```
-
-**16:00–19:00 — Event Collector Research**
-- Read `/greedybear/api/` deeply — existing auth patterns, serializers, ViewSets
-- Study the Django Q2 task queue setup in `/cronjobs/`
-- Note: Which endpoints have proper validation? Which don't?
-- Write down the exact technical questions to ask Matteo tomorrow
-
----
-
-## Day 2 — March 20: Second PR + Engagement
-
-**Target:** Second PR submitted. Specific technical question posted to Matteo.
-
-### Tasks
-
-**08:00–09:00** — Check PR #1 feedback. Respond immediately to any comments.
-
-**09:00–12:00** — **PR #2: Issue #1089 or #1085**
-- #1089: Feeds filter enhancement (touch API code without major refactor)
-- #1085: Cronjob exception handling (Django Q2 error patterns)
 
 ```bash
 git checkout develop && git pull origin develop
-git checkout -b fix/issue-1089-feeds-filter develop
-# Implement
+git checkout -b fix/issue-NNN-description develop
+
+# Make the fix
 ruff check . --fix && ruff format .
 pre-commit run --all-files
 docker exec greedybear_uwsgi python3 manage.py test
-git push origin fix/issue-1089-feeds-filter
+
+git add [specific files]
+git commit -m "fix: [description]"
+git push origin fix/issue-NNN-description
 ```
-
-**12:00–14:00** — Post technical question for Matteo:
-```
-Hi @matteo.lodi — working on understanding the auth architecture
-for my Event Collector API proposal.
-
-I looked at the existing token auth patterns in /authentication/
-and noticed [specific thing, e.g., "TokenAuthentication is used but
-without custom scopes"].
-
-For the Event Collector API, I'm planning scope-based auth
-(events:write, events:read). My question: should I extend the existing
-DRF TokenAuthentication class, or build a separate EventCollectorToken
-model with its own auth class?
-
-The main tradeoff I see: separate model is cleaner but more migration risk.
-Extending existing is simpler but may cause unintended coupling.
-
-What's your preferred approach? I want to match how you're thinking
-about the auth layer.
-```
-
-**14:00–17:00** — Study the Event Collector architecture deeply:
-- How does data flow from the API to Elasticsearch?
-- Where does Django Q2 fit?
-- What models would a new Event need?
-- Sketch the EventCollectorToken model
-
-**17:00–21:00** — Write full Problem Statement + Technical Approach in PROPOSAL_DRAFT.md
 
 ---
 
-## Day 3 — March 21: Substance
+## Day 2 — March 20: PR #2
 
-**Target:** More complex PR. Proposal 80% complete. Community visible.
-
-### Tasks
-
-**09:00–12:00** — **PR #3: Training Data Export (#1087) or more complex bug fix**
-- #1087 (Training Data Export) touches serialization and data handling — directly relevant to Event Collector API work
-- Shows you can handle large data and async patterns
+**Target:** Second PR in a different area. Options:
+- The ML feature importances API endpoint (if you can implement it)
+- Another unclaimed backend issue
+- A test coverage improvement for an existing view
 
 ```bash
 git checkout develop && git pull origin develop
-git checkout -b feature/issue-1087-training-export develop
+git checkout -b [fix|feat|test]/issue-NNN-description develop
 ```
-
-**12:00–14:00** — Review 2 open PRs in GreedyBear. Leave substantive comments.
-
-**14:00–16:00** — Post in Discord: share that you're working on Issue #1087 and have a draft PR. This keeps you visible.
-
-**16:00–21:00** — Complete Timeline + Deliverables + "About Me" in proposal.
 
 ---
 
-## Day 4 — March 22: Polish
+## Day 3 — March 21: PR #3 (ML Differentiator)
 
-**Target:** Proposal review-ready. Mentors know your approach.
+This is the day to submit the ML model improvement PR if you can.
 
-### Tasks
+**ML Feature Importances API Endpoint:**
+```python
+# What this looks like:
+# GET /api/ml/feature-importances/
+# Returns: {"features": [{"name": "...", "importance": 0.34}, ...]}
 
-**09:00–11:00** — Address all PR feedback. Every comment gets a response. Every fix gets pushed.
-
-**11:00–13:00** — Post proposal outline to mentors:
-```
-Hi @matteo.lodi @tim.leonhard — I've drafted my Event Collector API
-proposal and would love a sanity check:
-
-Backend (primary):
-- EventCollectorToken model (scope-based: events:write/read)
-- DRF ViewSet with input validation (Serializer)
-- Django Q2 async processing task
-- Rate limiting per token
-- Status endpoint for event processing tracking
-- >80% test coverage
-
-Frontend (supporting, if time allows):
-- Token management CRUD UI
-- Injection statistics dashboard
-
-Two questions:
-1. Should frontend token management be in GSoC scope, or defer?
-2. For ES indexing — separate indices for injected events, or merge with T-Pot?
-
-Happy to share full draft.
+# Implementation:
+# 1. Load the trained RF model from wherever it's stored
+# 2. Extract .feature_importances_ from the model
+# 3. Return as DRF response
+# 4. Add a test
 ```
 
-**13:00–21:00** — Final proposal polish.
+This PR is worth 3x a simple bug fix in terms of proposal differentiation.
 
 ---
 
-## Day 5 — March 23: Submit
+## Day 4 — March 22: Final Polish
 
-**Target:** Proposal submit-ready.
-
-### Tasks
-
-**09:00–12:00** — Final proposal pass. Verify deliverables are concrete and timeline is realistic.
-
-**12:00–14:00** — Post contribution summary in Discord.
-
-**14:00–17:00** — Address any last PR feedback.
-
-**17:00–20:00** — Submit proposal.
+Address all PR feedback. If 3 PRs are in a clean state, stop adding more and focus on the proposal.
 
 ---
 
-## PR Template (Copy-Paste for Every PR)
+## PR Template (Always Use This)
 
 ```markdown
 ## What changed
-[One sentence description]
+[One sentence]
 
 ## Why
 [Why this change is needed]
@@ -261,30 +186,30 @@ Fixes #NNN
 
 ---
 
-## Git Workflow
+## Competitor Awareness
 
-```bash
-# Always start from develop
-git checkout develop && git pull origin develop
+| Competitor | Merged/Open | Their Style | Threat Level |
+|-----------|------------|-------------|-------------|
+| drona-gyawali | 1 merged (ML feature importances) | ML improvements | High — but you can build on their work |
+| rootp1 | 1 merged (Heralding extraction) | New extraction strategies | High quality |
+| cclts | 1 merged (Cowrie file transfer) | New extraction strategies | High quality |
+| opbot-xd | 1 open (ASN aggregates) | Database architecture | High |
+| Prasad8830 | 1 open (feeds filter) | Frontend | Medium |
 
-# Feature branch
-git checkout -b fix/issue-NNN-description develop
-
-# Before committing
-ruff check . --fix
-ruff format .
-pre-commit run --all-files
-docker exec greedybear_uwsgi python3 manage.py test
-
-# Squash to one logical commit
-git rebase -i develop
-# Mark all but first as 'squash'
-
-# Push
-git push origin fix/issue-NNN-description
-```
+**The most dangerous competitors have already merged high-quality work.** You're competing for the next batch of issues. The ML layer is where they haven't gone yet.
 
 ---
 
-**Last Updated:** March 19, 2026
-**Mode:** 5-day blitz
+## Key Resources
+
+| Resource | URL |
+|----------|-----|
+| Repository | https://github.com/intelowlproject/GreedyBear |
+| Issues | https://github.com/intelowlproject/GreedyBear/issues |
+| Open PRs | https://github.com/intelowlproject/GreedyBear/pulls |
+| Honeynet Discord | Check honeynet.org for invite link |
+
+---
+
+**Last Updated:** March 19, 2026 (post-intelligence rewrite)
+**Priority:** #4 of 5

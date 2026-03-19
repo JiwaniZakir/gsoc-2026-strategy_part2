@@ -1,8 +1,215 @@
-# Open Climate Fix: Day-by-Day Engagement Guide
+# Open Climate Fix: Engagement Guide
 
-**Community:** OCF Slack (check project README for invite) + GitHub Discussions
-**GitHub:** https://github.com/openclimatefix/open-source-quartz-solar-forecast
-**Key rule:** Comment on issues BEFORE starting any work
+**Priority:** #2
+**Community:** OCF Slack (primary) + GitHub Discussions
+**Key contacts:** peterdudfield (@peterdudfield)
+
+---
+
+## Channels
+
+| Channel | URL | Notes |
+|---------|-----|-------|
+| **OCF Slack** | Check README for invite link | Primary channel — join `#gsoc` if exists, otherwise `#general` |
+| **GitHub Discussions (quartz)** | https://github.com/openclimatefix/open-source-quartz-solar-forecast/discussions | For longer design discussions |
+| **GitHub Issues (pvnet)** | https://github.com/openclimatefix/pvnet/issues | **Primary PR target** |
+| **GitHub Issues (quartz)** | https://github.com/openclimatefix/open-source-quartz-solar-forecast/issues | Secondary PR target |
+
+---
+
+## Mentor Profiles
+
+### peterdudfield (@peterdudfield)
+- 150 commits, primary maintainer and decision-maker
+- Merge velocity: SLOW (last merge March 16, before that Feb 23)
+- Style: community-friendly, approachable
+- Timezone: UK (OCF is UK-based) — post 08:00–16:00 UTC for best response time
+- **Approach:** Be patient with review times. Multiple PRs mean multiple chances at visibility.
+
+### aryanbhosale (@aryanbhosale)
+- 47 commits, regular contributor
+- Good for: implementation questions, pvnet-specific questions
+- **Approach:** Technical discussion partner while waiting for peterdudfield reviews
+
+---
+
+## Day 1 — March 19: Join + First Intro
+
+### Join OCF Slack
+
+Find the invite link in the quartz-solar-forecast README. Join and look for `#gsoc-2026` or `#solar-forecasting`.
+
+### Post Intro (After First pvnet PR)
+
+```
+Hi Open Climate Fix! I'm Zakir — ML/AI developer applying for GSoC 2026
+on the error adjustment (TabPFN) project.
+
+Background relevant here:
+- Built spectra: RAG evaluation toolkit — confidence scoring for ML pipeline
+  outputs, which is the core challenge for an error adjuster
+- Built aegis: intelligence platform — tabular feature engineering for structured prediction
+- Merged to huggingface/transformers — large ML Python codebase navigation
+
+The TabPFN adjuster framing is elegant: instead of building a better base model,
+learn the systematic residuals. This generalizes across sites and seasons without
+retraining the base model.
+
+I've set up both quartz-solar and pvnet environments. Just submitted PR #[N]
+to pvnet on [issue].
+
+GitHub: JiwaniZakir
+```
+
+---
+
+## Day 2 — March 20: Technical Question
+
+### Post Design Question (GitHub Discussion or Slack)
+
+```
+Hi @peterdudfield — design question for the TabPFN error adjustment proposal.
+
+For the adjuster integration point, I see two options:
+
+Option A: Post-processing layer (pure residual learner)
+  raw = run_forecast(site, start, end)
+  adjusted = raw + tabpfn_adjuster.predict(raw, meta_features)
+
+  Pro: Backward compatible, easily toggleable (run_forecast(apply_adjuster=True))
+  Con: Adjuster only sees the raw forecast, not the original weather features
+
+Option B: Feature-augmented
+  adjusted = run_forecast(site, start, end, use_adjuster=True)
+  # Internally: adjuster features concatenated with weather features
+
+  Pro: More information for the adjuster
+  Con: Tightly couples adjuster to base model internals
+
+My preference: Option A — TabPFN works well as a residual learner, and
+Option A keeps the existing model completely untouched.
+
+Is this how the project is envisioned?
+```
+
+---
+
+## Day 3 — March 21: pvnet PR + Proposal Share
+
+### Post Proposal Outline
+
+```markdown
+# [GSoC 2026] TabPFN Error Adjustment — Proposal Outline
+
+Sharing for early mentor feedback.
+
+## Deliverables
+
+1. TabPFNAdjuster class: (raw_forecast, meta_features) → residual
+2. Training pipeline: builds historical (forecast, actual) dataset from HF Hub
+3. API integration: run_forecast(apply_adjuster=True) opt-in
+4. Evaluation framework: MAE/RMSE before/after across sites + seasons
+5. pvnet integration: same adjuster architecture for pvnet outputs
+6. CI benchmarks: automated regression tests for adjustment quality
+
+## Questions for Mentors
+
+1. pvnet integration: same class, or separate adjuster subclass for pvnet's data format?
+2. Training data: canonical dataset of (forecast, actual) pairs, or build the
+   collection pipeline as a deliverable?
+
+GitHub: JiwaniZakir
+```
+
+---
+
+## Day 4 — March 22: Alignment
+
+### If peterdudfield Responded
+
+```
+Thanks @peterdudfield! Very helpful.
+
+Based on your feedback:
+1. [Their point] → I'll change [X] to [Y]
+2. [Their point] → Added [specific thing] to the scope
+
+For pvnet: I'll treat it as a secondary deliverable demonstrating the
+adjuster generalizes. Core first, then expand scope.
+
+Updated draft: [link to gist]
+```
+
+### If No Response Yet (peterdudfield is slow — expected)
+
+Post on the relevant GitHub issue directly:
+```
+Hi — I've submitted PRs to both quartz-solar and pvnet this week
+as part of my GSoC 2026 application (error adjustment project).
+Would appreciate any feedback on the integration design direction
+when you have a moment.
+```
+
+---
+
+## Day 5 — March 23: Final Summary
+
+```
+GSoC 2026 contribution summary (Open Climate Fix):
+
+PRs this week:
+- PR #[N] (pvnet): [description] — [status]
+- PR #[N] (quartz-solar): CI speed fix — [status]
+- PR #[N] (pvnet): [second contribution] — [status]
+
+Key learning that shaped the proposal: [specific technical insight
+about pvnet/quartz-solar architecture you'd only know from the code]
+
+Thanks for the community engagement!
+GitHub: JiwaniZakir
+```
+
+---
+
+## Managing Slow Review Velocity
+
+peterdudfield's merge cadence is ~every 3 weeks. Don't let this kill momentum.
+
+1. Submit all PRs, don't wait for reviews before starting the next
+2. Stay active in Slack regardless of PR status
+3. On Day 4: polite bump — "Friendly note on PR #[N] — no rush, also opened #[N+1]"
+4. Open PRs with visible activity are still strong evidence for evaluators
+
+---
+
+## Climate Tech Narrative (For Proposals + Outreach)
+
+Don't just say "I care about climate change." Make it specific:
+
+> "Solar forecasting accuracy directly affects grid operators' willingness to accept more renewable generation. A 10% improvement in forecast MAE reduces curtailment of solar power. TabPFN's approach to learning site-specific residuals is the right tool because it generalizes without massive training sets — critical for new installations with limited history."
+
+This shows you understand the domain impact AND why the specific technical approach is justified.
+
+---
+
+## Response Templates
+
+### When peterdudfield Reviews Your PR
+
+```
+Thanks for the review!
+
+1. [Comment 1]: [What you changed and why it's better now]
+2. [Comment 2]: Good catch — added a test for this edge case.
+3. [Comment 3]: I was using [approach] for [reason]. Happy to switch
+   to [their preference] — makes sense for [their reason].
+
+pytest passes. CI green. Ready for re-review!
+```
+
+---
+
+**Last Updated:** March 19, 2026 (post-intelligence rewrite)
 
 ---
 
