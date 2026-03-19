@@ -5,6 +5,111 @@
 
 ---
 
+## Verification Results
+**Verification Date:** 2026-03-19
+**Method:** `gh api` checks on all 21 repos — repo metadata, external PR merge history, GSoC 2026 issue/discussion/label/topic signals, CLA/DCO scan, stale open PR audit
+
+### Verification Table
+
+| Repo | External PRs Accepted? | Last External Merge | GSoC 2026 Confirmed? | CLA/DCO Required? | Verdict |
+|------|------------------------|---------------------|----------------------|-------------------|---------|
+| **aboutcode-org/vulnerablecode** | ✅ Yes (14/50 merged) | 2026-03-16 | ✅ Yes (gsoc label + issues) | ❌ None | 🔴 OVERRUN — confirmed + competitive |
+| **openclimatefix/quartz-solar-forecast** | ✅ Yes (36/50 merged!) | 2026-03-16 | ❓ UNCONFIRMED | ❌ None | ⚠️ CAUTION — great maintainers, GSoC TBD |
+| **openclimatefix/pvnet** | ✅ Yes (23/50 merged) | 2026-02-02 | ❓ UNCONFIRMED | ❌ None | ⚠️ CAUTION — same org uncertainty |
+| **accordproject/cicero** | ✅ Yes (23/50 merged) | 2026-03-19 | ❓ Unconfirmed via GitHub | ❌ None | 🔴 OVERRUN regardless |
+| **accordproject/concerto** | ✅ Yes (22/50 merged) | 2026-03-17 | ❓ Unconfirmed via GitHub | ❌ None | 🔴 OVERRUN regardless |
+| **honeynet/GreedyBear** | ✅ Yes (37/50 merged) | 2026-03-19 | ✅ Yes (GSoC 2026 discussions) | ❌ None | 🔴 OVERRUN — most external users of any repo |
+| **dora-rs/dora** | ✅ Yes (25/50 merged) | 2026-03-18 | ✅ Yes (4 GSoC 2026 discussions) | ❌ None | 🔴 OVERRUN — Bhanudahiyaa dominates |
+| **projectmesa/mesa** | ✅ Yes (21/50 merged) | 2026-03-19 | ✅ Yes (7 GSoC 2026 discussions) | ❌ None | 🔴 OVERRUN |
+| **foss42/apidash** | ✅ Yes | N/A | ✅ Yes (13 literal GSoC proposal PRs) | ❌ None | 🔴🔴 EXTREME — do not enter |
+| **keploy/keploy** | ✅ Yes (15/50 merged) | 2026-03-19 | ✅ Yes (gsoc label, 20+ issues) | ❌ None | 🟡 YELLOW — organized, manageable |
+| **laurent22/joplin** | ✅ Yes (22/50 merged) | 2026-03-19 | ❓ No GSoC signal found | ❌ None | 🔴 OVERRUN but GSoC unconfirmed |
+| **RocketChat/Rocket.Chat** | ✅ Yes (8/50 merged) | 2026-03-18 | ✅ Yes (10+ GSoC 2026 discussions) | ❌ None | 🔴 OVERRUN — 24 open external PRs |
+| **FluxML/Flux.jl** | ✅ Yes (16/50 merged) | 2026-03-13 | ❓ UNCONFIRMED (1 applicant interest post only) | ❌ None | ⚠️ CAUTION — GSoC via JuliaLang umbrella, unverified |
+| **lcompilers/lpython** | 🚨 EFFECTIVELY BLOCKED | **2025-07-11** (8+ months!) | ❓ No signal found | ❌ None | ❌ ELIMINATED — maintainers not reviewing external PRs |
+| **CircuitVerse/CircuitVerse** | ✅ Yes (14/50 merged) | 2026-03-17 | ✅ Yes (GSoC 2026 project ideas discussion) | ❌ None | 🟡 YELLOW — manageable if targeting complex features |
+| **AOSSIE-Org/Resonate** | ✅ Yes (10/30 merged) | 2026-02-11 | ❓ UNCONFIRMED | ❌ None | ⚠️ CAUTION — GSoC 2026 not confirmed |
+| **submitty/Submitty** | ✅ Yes (29/50 merged) | 2026-03-17 | ❓ No signal found | ❌ None | ⚠️ CAUTION — active but GSoC unconfirmed |
+| **sympy/sympy** | ✅ Yes (13/50 merged) | 2026-03-19 | ✅ Yes (GSoC 2026 discussions + GSoC label) | ❌ None | 🔴 HIGH COMPETITION — 30 open external PRs |
+| **zulip/zulip** | ✅ Yes (4/50 merged) | 2026-03-13 | ✅ Yes (gsoc-ideas page + historical powerhouse) | ❌ None | 🟢 LOW COMPETITION — 10 open external PRs |
+| **wagtail/wagtail** | ✅ Yes (4/50 merged) | 2026-03-11 | ✅ Yes (GSoC 2026 discussion, GSOC label) | ❌ None | 🟡 YELLOW — 23 open external PRs, selective mergers |
+| **aboutcode-org/scancode-toolkit** | ⚠️ SLOW | **2026-01-09** (2.5 months) | ❓ No signal found | ❌ None | ⚠️ CAUTION — stale open PRs since 2021, maintainers do own work |
+| **intelowlproject/IntelOwl** | ✅ Yes (9/50 merged) | 2026-03-19 | ✅ Yes (GSoC 2026 Slack + discussion) | ❌ None | 🟡 YELLOW — ~14 real human open PRs, manageable |
+
+> **Methodology note:** "External PRs" = merged PRs where `author_association` ≠ MEMBER/OWNER/COLLABORATOR, measured against last 50 closed PRs. "Open PRs" = non-member open PRs at time of check.
+
+---
+
+### Critical Red Flags Found
+
+#### ❌ lcompilers/lpython — EFFECTIVELY BLOCKED
+**Finding:** Last external PR merged was **2025-07-11** — over 8 months ago. At time of check:
+- Open PRs from `ekMartian` and others submitted in 2026 with **0 comments**
+- Oldest open non-member PRs date back to **2022** (from `certik` himself — indicating even the founder's branches are stuck)
+- Last commit to `main`: 2025-12-11 by `swamishiju` (internal only)
+- No GSoC 2026 signal anywhere
+
+**Verdict:** This repo is technically open but functionally **closed to external contributors**. The maintainer `swamishiju` is only merging their own branches. **ELIMINATED from strategy.**
+
+#### ⚠️ aboutcode-org/scancode-toolkit — SELECTIVE/SLOW
+**Finding:** Last external merge was 2026-01-09 (10 weeks ago). Open PRs from 2021 (`heliocastro`, `robertlagrant`) have never been reviewed. Maintainers actively commit but don't review external work.
+**Verdict:** Not blocked, but slow/selective. Lower priority.
+
+#### ⚠️ openclimatefix (pvnet + quartz-solar-forecast) — GSoC UNCONFIRMED
+**Finding:** Zero GSoC signal found anywhere — no topics, no issues, no discussions, no labels mentioning "gsoc" or "2026". These were our **#1 and #2 ranked repos** from the earlier sweep.
+**Verdict:** Excellent maintainers (36/50 merged for quartz, very high acceptance rate) but **cannot confirm GSoC 2026 participation**. Contributing is still valuable for demonstrating capability, but don't count on it for the formal GSoC application unless you can confirm via the GSoC org list at summerofcode.withgoogle.com.
+
+#### ⚠️ FluxML/Flux.jl — GSoC UNCONFIRMED
+**Finding:** The single "GSoC 2026 Interest: RL Environments Project" issue was **posted by an applicant (`ram-cs7`)**, not by maintainers. No maintainer response, no org-level signal. FluxML would participate via the **JuliaLang or NumFOCUS umbrella org**, not independently. Cannot verify from GitHub data alone.
+**Verdict:** External PRs ARE being merged (2026-03-13 last). Low competition. But GSoC participation requires independent verification at summerofcode.withgoogle.com.
+
+#### ⚠️ AOSSIE-Org — GSoC UNCONFIRMED
+**Finding:** Only one GSoC 2026 signal found org-wide: a single discussion in `PictoPy` ("Introduction & Contribution Interest | GSoC 2026") — posted by an **applicant**, not a maintainer. `PictoPy` has **0 external merges** in last 30. The active `Resonate` repo (10 external merges, last 2026-02-11) shows no GSoC 2026 signal.
+**Verdict:** Cannot confirm GSoC 2026. Contributing to Resonate is viable but risky without GSoC confirmation.
+
+---
+
+### Green Flags Upgraded
+
+#### 🟢 NEW: zulip/zulip — GENUINELY LOW COMPETITION
+- **External PRs in last 50 closed:** Only 4 — lowest of any confirmed-GSoC repo
+- **Open external PRs:** Only 10 non-member PRs open
+- **GSoC 2026:** Near-certain — multi-year powerhouse, dedicated gsoc-ideas page at zulip.readthedocs.io
+- **Maintainer response:** Active (last external merge 2026-03-13)
+- **CLA/DCO:** None required
+- **Why low competition:** Zulip requires high-quality PRs; most applicants self-select out. This filters noise but means your bar must be higher.
+
+#### 🟡 NEW: intelowlproject/IntelOwl — CONFIRMED + MANAGEABLE
+- **Correct location:** `intelowlproject/IntelOwl` (not `honeynet/IntelOwl` — 404)
+- **External PRs in last 50:** 9 merged; last 2026-03-19 (active today)
+- **Open external PRs:** ~14 real humans (excluding dependabot)
+- **GSoC 2026 confirmed:** Issue "GSoC 2026: Slack invite link expired" = they have a dedicated GSoC 2026 Slack workspace
+- **Positioning:** Honeynet org runs the GSoC program (not IntelOwl itself); cybersecurity focus differentiates from ML/web crowd
+
+---
+
+### REVISED TOP 5 (Post-Verification)
+
+| Rank | Project | Why |
+|------|---------|-----|
+| 🥇 1 | **zulip/zulip** | Only 10 open external PRs; GSoC 2026 near-certain; 0 CLA; Python; high-quality program means your work actually gets reviewed and valued |
+| 🥈 2 | **openclimatefix/quartz-solar-forecast** | 36/50 external merges = best acceptance rate of any repo; low open competition; GSoC TBD — contribute now, verify GSoC separately |
+| 🥉 3 | **intelowlproject/IntelOwl** | GSoC 2026 confirmed; ~14 human open PRs; active merges; cybersecurity angle differentiates you from the Python/ML crowd |
+| 4 | **CircuitVerse/CircuitVerse** | GSoC 2026 confirmed; moderate competition manageable if targeting FSM editor, subgroup support, or backend complexity — not UI tweaks |
+| 5 | **wagtail/wagtail** | GSoC 2026 confirmed (GSOC label + 2026 discussion); 23 open external PRs but 4/50 merged = selective standard you can meet; Django/Python |
+
+**Dropped from top picks:**
+- ~~lcompilers/lpython~~ → **ELIMINATED** (maintainer ghosting external contributors for 8+ months)
+- ~~openclimatefix/pvnet~~ → **DEMOTED** to "verify first" (same GSoC uncertainty as quartz, but lower merge acceptance than quartz)
+- ~~FluxML/Flux.jl~~ → **DEMOTED** to "verify first" (GSoC participation unconfirmed; needs JuliaLang umbrella check)
+- ~~AOSSIE-Org~~ → **DEMOTED** to "verify first" (no org-level GSoC 2026 confirmation found)
+
+**Honorable mentions:** `sympy/sympy` (GSoC confirmed, but 30 open external PRs = crowded); `keploy/keploy` (organized program, manageable if you target labeled issues directly)
+
+---
+
+---
+
 ## TL;DR — What Changed
 
 > Several "hidden gems" have been **overrun by GSoC applicants**, a few are **not even in GSoC 2026**, and a small cluster remain genuinely quiet. Here's the real picture.
