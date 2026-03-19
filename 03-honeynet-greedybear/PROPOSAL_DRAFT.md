@@ -1,891 +1,364 @@
-# GreedyBear Event Collector API — GSoC 2026 Proposal
+# GSoC 2026 Proposal: GreedyBear Event Collector API
 
 **Applicant:** Zakir Jiwani
-**GitHub:** @zakirjiwani
-**Email:** [your-email@domain.com]
-**Timezone:** [Your Timezone, e.g., US Eastern]
-**Expected Availability:** 40+ hours/week (May — August)
+**GitHub:** github.com/JiwaniZakir
+**Email:** jiwzakir@gmail.com
+**Timezone:** EST (UTC-5)
+**Availability:** Full-time, 40 hrs/week (May–August)
 **Organization:** The Honeynet Project / GreedyBear
-**Mentors:** Tim Leonhard (frontend), Matteo Lodi (backend)
-**Project Difficulty:** 175-350 hours (medium-large)
+**Mentors:** Matteo Lodi (backend), Tim Leonhard (frontend)
+**Duration:** 175–350 hours
+**Difficulty:** Medium–Large
 
 ---
 
-## Executive Summary
+## Synopsis
 
-This proposal outlines the design and implementation of a **secure, scalable Event Collector API** for GreedyBear, enabling external applications to programmatically inject standardized honeypot event data. The API will feature token-based authentication, rate limiting, comprehensive validation, and a fully asynchronous processing pipeline. This transforms GreedyBear from a single-source intelligence platform into a **multi-source threat intelligence hub**, critical for enterprises managing heterogeneous honeypot infrastructure.
+GreedyBear currently accepts honeypot events only from T-Pot deployments. This limits it to users running exactly one honeypot stack, missing the large population of security teams running Cowrie, Glastopf, or custom honeypots. This project designs and implements a **secure, production-ready Event Collector API** — a REST endpoint that lets any external application inject standardized honeypot events into GreedyBear with token-based authentication, configurable rate limiting, full validation, and asynchronous processing via Django Q2. The result transforms GreedyBear from a single-source platform into a multi-source threat intelligence hub.
 
 ---
 
 ## Problem Statement
 
-### Current State
-
-GreedyBear currently receives event data from **single-source T-Pot honeypot deployments**. Data flow is:
+### Current Architecture Limitation
 
 ```
-T-Pot Honeypot → Elasticsearch → GreedyBear Django Backend → API/Dashboard
+T-Pot Honeypot → Elasticsearch → GreedyBear Django → API/Dashboard
 ```
 
-**Limitations:**
-1. **Single Source:** Only T-Pot data supported natively
-2. **Manual Integration:** External honeypot managers (Cowrie, Glastopf, etc.) require custom integrations
-3. **No Standard Format:** Each external source needs custom adapters
-4. **Scalability Concern:** Direct Elasticsearch writes bypassed API layer; difficult to audit/control
-5. **Enterprise Gap:** Organizations running multiple honeypot types can't consolidate intelligence in GreedyBear
+No standardized ingestion path exists for any other honeypot type. Organizations running:
+- Cowrie SSH honeypots
+- Glastopf web honeypots
+- Custom deception platforms
+- Commercial honeypot solutions
 
-### Business Impact
+...cannot get their data into GreedyBear without custom, one-off integrations that break on every API change.
 
-Security teams managing distributed honeypots currently:
-- Cannot centralize intelligence across multiple honeypot types
-- Lack a unified API for programmatic event injection
-- Have no rate limiting/quota system for external sources
-- Cannot audit who injected what data, when, and why
+### Impact
 
-This limits GreedyBear's utility in production enterprises where heterogeneous infrastructure is the norm.
+1. **Data gap:** GreedyBear's threat intelligence is incomplete — it only sees T-Pot events
+2. **Enterprise blocker:** Security teams with heterogeneous stacks can't adopt GreedyBear
+3. **No audit trail:** There's no way to know who injected what data, when, or from where
+4. **Scalability concern:** Direct Elasticsearch writes bypass the API layer, removing validation
 
-### Solution: Event Collector API
+### Solution
 
-A **secure REST endpoint** that:
-1. Accepts standardized event JSON from any source
-2. Authenticates via token-based credentials with scopes
-3. Validates against predefined schema
-4. Rates limits per source/token
-5. Processes events asynchronously (enrichment, ES indexing)
-6. Provides status tracking for injected events
-7. Audits all ingestion (who, what, when, IP)
+A REST endpoint (`POST /api/v1/events/collect/`) that:
+- Authenticates via token with configurable scopes
+- Validates incoming event data against a strict schema
+- Queues events for async processing via Django Q2
+- Provides status tracking for each injected event
+- Logs all injections for audit purposes
 
 ---
 
-## Project Goals
+## Technical Design
 
-### Primary Goals
-
-1. **Enable Multi-Source Event Ingestion**
-   - RESTful endpoint for event injection
-   - Support any honeypot manager or threat intel platform
-   - Backward compatible with existing APIs
-
-2. **Enterprise-Grade Security**
-   - Token-based authentication with scopes
-   - Rate limiting (configurable per token)
-   - API key rotation support
-   - Audit logging of all injections
-
-3. **Data Quality & Validation**
-   - Strict schema enforcement (DRF serializers)
-   - Field type validation (IPs, ports, timestamps)
-   - Cross-field constraint validation
-   - Meaningful error responses (not generic 400s)
-
-4. **Reliable Processing**
-   - Asynchronous task queue (Django Q2)
-   - Idempotent event handling (no duplicates)
-   - Error tracking (failed events visible to operator)
-   - Retry logic for transient failures
-
-5. **Developer Experience**
-   - Clear API documentation (OpenAPI/Swagger)
-   - Example code in Python, cURL, JavaScript
-   - Postman collection for exploration
-   - Comprehensive test coverage (>80%)
-
-### Secondary Goals
-
-1. **Frontend Token Management**
-   - Dashboard UI for API token CRUD
-   - Copy-to-clipboard for token display
-   - Rate limit configuration per token
-   - Token usage statistics
-
-2. **Monitoring & Analytics**
-   - Events ingested per source/token
-   - Error rate tracking
-   - Processing latency metrics
-   - Dashboard widgets for injection health
-
-3. **Operational Features**
-   - Token expiration & revocation
-   - IP whitelisting per token
-   - Scopes management (read, write, admin)
-   - Bulk event validation endpoint
-
----
-
-## Scope & Deliverables
-
-### Scope: In
-
-**Backend API Implementation (Primary Focus)**
-- [x] Event model enhancements (if needed)
-- [x] DRF serializers with validation
-- [x] Authentication (token + custom class)
-- [x] Permission classes (scopes-based)
-- [x] ViewSet implementation (POST, GET status)
-- [x] Rate limiting middleware
-- [x] Cronjob for event processing
-- [x] Error handling & logging
-- [x] Comprehensive unit & integration tests
-- [x] OpenAPI schema (auto-generated)
-- [x] API documentation (Markdown guide)
-- [x] Example scripts (cURL, Python, JavaScript)
-
-**Frontend Integration (Supporting)**
-- [x] Token management UI (CRUD)
-- [x] Token display with copy-to-clipboard
-- [x] Basic statistics dashboard
-- [x] Error messages for injected events
-
-**DevOps & Infrastructure**
-- [x] Database migrations
-- [x] Docker configuration (if needed)
-- [x] CI/CD pipeline updates
-
-### Scope: Out
-
-**Out of Scope (Future Work)**
-- [ ] Bulk import endpoints (CSV/JSON file upload)
-- [ ] Event filtering by source in API (search/list improvements are separate issues)
-- [ ] Custom field mappings per source
-- [ ] Multi-tenancy support
-- [ ] gRPC endpoints (REST sufficient for MVP)
-- [ ] Kafka/Message Queue integration (Django Q2 sufficient)
-- [ ] Advanced threat intelligence enrichment pipeline
-- [ ] ML-based anomaly detection
-
----
-
-## Technical Approach
-
-### Architecture Overview
+### Architecture
 
 ```
-External Service
-      ↓
-[POST /api/v1/events/collect/]
-      ↓
+External Honeypot / Platform
+          ↓
+POST /api/v1/events/collect/
+          ↓
 DRF ViewSet
-  - Authenticate (token)
-  - Check scopes (events:write)
-  - Check rate limit
-      ↓
-EventCollectorSerializer
-  - Validate schema
-  - Type checking
-  - Cross-field validation
-      ↓
-Django Q2 Task Queue
-      ↓
-Processing Task
-  - Enrich (threat intel lookups)
-  - Index to Elasticsearch
-  - Update statistics
-  - Generate alerts (if high severity)
-      ↓
-Event stored with status=completed
-      ↓
-Frontend displays in dashboard
+  ├── EventCollectorTokenAuthentication (custom)
+  ├── IsEventCollector permission (scope check)
+  └── EventCollectorThrottle (per-token rate limit)
+          ↓
+EventCollectorSerializer (validation)
+  ├── IP address format
+  ├── Port range validation
+  ├── Timestamp constraints
+  └── Cross-field validation (source_ip ≠ dest_ip)
+          ↓
+event.save(status='pending')
+Return 202 Accepted immediately
+          ↓
+Django Q2: async_task('process_collected_event', event.id)
+          ↓
+Processing Task:
+  ├── Threat intel enrichment (WHOIS, geolocation)
+  ├── Elasticsearch indexing
+  ├── Alert generation (severity >= high)
+  └── event.status = 'completed'
 ```
 
-### Technology Decisions & Rationale
-
-#### 1. REST API (vs GraphQL, gRPC)
-
-**Decision:** REST (HTTP POST) for event injection
-
-**Rationale:**
-- Existing DRF codebase uses REST exclusively
-- Simplest for external clients (no special libraries)
-- Better for rate limiting (HTTP headers)
-- OpenAPI schema auto-generated
-- GraphQL overkill for linear write operation
-
-#### 2. Token-Based Authentication (vs OAuth2)
-
-**Decision:** Custom token authentication (DRF TokenAuthentication + custom class)
-
-**Rationale:**
-- OAuth2 overhead not justified for service-to-service communication
-- Token per service/honeypot manager is clearer model
-- Easier to rotate, revoke, audit individual tokens
-- Matches existing GreedyBear auth patterns
-- Scopes can be added without full OAuth2 framework
-
-**Implementation:**
-```python
-# Request
-POST /api/v1/events/collect/
-Authorization: EventToken abc123def456...
-
-# Token lookup
-token = EventCollectorToken.objects.get(key='abc123...')
-if token.expires_at < now():
-    raise AuthenticationFailed('Token expired')
-```
-
-#### 3. Django Q2 for Processing (vs Celery)
-
-**Decision:** Use existing Django Q2 task queue
-
-**Rationale:**
-- Already migrated to Django Q2 (PR #789 merged)
-- No additional infrastructure (uses PostgreSQL)
-- Sufficient for event processing volumes
-- Fits architectural direction
-
-#### 4. Asynchronous Processing (vs Synchronous)
-
-**Decision:** Queue injection for async processing, return 202 Accepted immediately
-
-**Rationale:**
-- Event enrichment (IP geolocation, threat intel lookup) is slow
-- Elasticsearch indexing is I/O bound
-- Return immediately so client isn't blocked
-- Provide `/status/` endpoint for tracking
-
-**HTTP Status Codes:**
-- **202 Accepted:** Event queued, processing started
-- **400 Bad Request:** Validation error (fix request)
-- **401 Unauthorized:** Missing/invalid token
-- **403 Forbidden:** Token lacks `events:write` scope
-- **429 Too Many Requests:** Rate limit exceeded
-- **500 Server Error:** Unexpected error (shouldn't happen)
-
-#### 5. Database-Level Constraints (vs Application Logic)
-
-**Decision:** Validation in DRF serializer + database constraints
-
-**Rationale:**
-- Serializer provides immediate feedback (good UX for API clients)
-- Database constraints prevent inconsistency (data integrity)
-- Error messages from serializer are API-friendly
-- Application logic handles business rules
-
-**Example:**
-```python
-# Serializer validation
-source_ip = serializers.CharField(
-    validators=[IPAddressValidator()]
-)
-
-# Database constraint
-class Event(models.Model):
-    source_ip = models.GenericIPAddressField()
-    destination_ip = models.GenericIPAddressField()
-
-    class Meta:
-        constraints = [
-            CheckConstraint(
-                check=~Q(source_ip=F('destination_ip')),
-                name='source_dest_different'
-            )
-        ]
-```
-
-### API Endpoint Specification
-
-#### Endpoint 1: Create Event (Inject)
-
-```
-POST /api/v1/events/collect/
-
-Headers:
-  Authorization: EventToken YOUR_API_TOKEN
-  Content-Type: application/json
-
-Request Body (JSON):
-{
-  "event_type": "ssh_brute_force",
-  "timestamp": "2026-03-18T14:30:00Z",
-  "source_ip": "192.168.1.100",
-  "destination_ip": "10.0.0.1",
-  "source_port": 54321,
-  "destination_port": 22,
-  "protocol": "ssh",
-  "severity": "high",
-  "payload": {
-    "username_attempts": ["admin", "root"],
-    "password_attempts": 1000
-  },
-  "tags": ["brute-force", "ssh", "external"],
-  "source_identifier": "honeypot-eu-01"
-}
-
-Response (202 Accepted):
-{
-  "id": "550e8400-e29b-41d4-a716-446655440000",
-  "event_type": "ssh_brute_force",
-  "timestamp": "2026-03-18T14:30:00Z",
-  "status": "processing",
-  "message": "Event queued for processing",
-  "processing_url": "/api/v1/events/550e8400.../status/"
-}
-```
-
-#### Endpoint 2: Check Event Status
-
-```
-GET /api/v1/events/{event_id}/status/
-
-Headers:
-  Authorization: EventToken YOUR_API_TOKEN
-
-Response:
-{
-  "id": "550e8400-e29b-41d4-a716-446655440000",
-  "status": "completed",  // or "pending", "processing", "failed"
-  "created_at": "2026-03-18T14:30:00Z",
-  "processed_at": "2026-03-18T14:30:05Z",
-  "error_message": null,
-  "artifacts": {
-    "extracted_ips": ["192.168.1.100"],
-    "extracted_domains": [],
-    "extracted_hashes": []
-  }
-}
-```
-
-#### Endpoint 3: List Injected Events (Optional, but useful)
-
-```
-GET /api/v1/events/collect/?source_identifier=honeypot-eu-01&status=failed
-
-Response:
-{
-  "count": 5,
-  "next": null,
-  "previous": null,
-  "results": [
-    {
-      "id": "...",
-      "event_type": "...",
-      "status": "failed",
-      "error_message": "Invalid payload structure",
-      ...
-    }
-  ]
-}
-```
-
-### Data Validation Schema
-
-**EventCollectorSerializer fields:**
-
-| Field | Type | Required | Constraints | Example |
-|-------|------|----------|-------------|---------|
-| `event_type` | String | Yes | Valid enum | "ssh_brute_force" |
-| `timestamp` | DateTime | Yes | ISO 8601, not future | "2026-03-18T14:30:00Z" |
-| `source_ip` | IPv4/IPv6 | Yes | Valid IP format | "192.168.1.100" |
-| `destination_ip` | IPv4/IPv6 | Yes | Valid IP format, ≠ source_ip | "10.0.0.1" |
-| `source_port` | Integer | Yes | 1-65535 | 54321 |
-| `destination_port` | Integer | Yes | 1-65535 | 22 |
-| `protocol` | String | Yes | Valid enum | "ssh", "http", "ftp" |
-| `severity` | String | Yes | low/medium/high/critical | "high" |
-| `payload` | JSON | Optional | No size limit > 10MB | {} |
-| `tags` | Array | Optional | Max 20 tags | ["ssh", "brute-force"] |
-| `source_identifier` | String | Optional | Max 255 chars | "honeypot-eu-01" |
-
-**Validation Rules:**
-```
-1. All required fields present
-2. source_ip ≠ destination_ip (cannot be same)
-3. source_port and destination_port in valid range
-4. timestamp not in future (tolerance: 1 minute)
-5. payload size < 10MB (prevent abuse)
-6. tags array < 20 items
-7. event_type in predefined list (whitelist)
-```
-
-### Authentication & Authorization
-
-#### Token Model
+### Token Model
 
 ```python
 class EventCollectorToken(models.Model):
     key = models.CharField(max_length=40, unique=True, primary_key=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
-    scopes = models.JSONField(default=list)  # ["events:write", ...]
-    rate_limit = models.IntegerField(default=1000)  # per hour
-    ip_whitelist = models.JSONField(default=list, blank=True)  # ["192.168.1.0/24", ...]
+    scopes = models.JSONField(default=list)       # ["events:write", "events:read"]
+    rate_limit = models.IntegerField(default=1000) # requests per hour
+    ip_whitelist = models.JSONField(default=list, blank=True)
     last_used = models.DateTimeField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField(null=True)
     is_active = models.BooleanField(default=True)
+
+    def is_valid(self) -> bool:
+        if not self.is_active:
+            return False
+        if self.expires_at and self.expires_at < timezone.now():
+            return False
+        return True
 ```
 
-#### Scopes
+### Custom Authentication Class
 
-- `events:write` — Permission to inject events
-- `events:read` — Permission to query injected events
-- `tokens:admin` — Permission to manage tokens (for ops)
+```python
+class EventCollectorTokenAuthentication(TokenAuthentication):
+    keyword = 'EventToken'
 
-#### Rate Limiting Strategy
+    def authenticate(self, request):
+        result = super().authenticate(request)
+        if result is None:
+            return None
+
+        user, token = result
+
+        if not token.is_valid():
+            raise AuthenticationFailed('Token is expired or inactive')
+
+        # Update last_used without triggering full model validation
+        EventCollectorToken.objects.filter(pk=token.pk).update(
+            last_used=timezone.now()
+        )
+
+        return user, token
+```
+
+### Custom Permission (Scope Check)
+
+```python
+class IsEventCollector(BasePermission):
+    message = 'Valid events:write scope required.'
+
+    def has_permission(self, request, view):
+        if request.method not in ('POST',):
+            return True
+        token = request.auth
+        if not token or not hasattr(token, 'scopes'):
+            return False
+        return 'events:write' in token.scopes
+```
+
+### Per-Token Rate Limiting
 
 ```python
 class EventCollectorThrottle(UserRateThrottle):
     def get_rate(self):
         token = self.request.auth
-        if hasattr(token, 'rate_limit'):
-            return f"{token.rate_limit}/hour"
-        return "1000/hour"  # Default
+        if hasattr(token, 'rate_limit') and token.rate_limit:
+            return f'{token.rate_limit}/hour'
+        return '1000/hour'  # Default
+```
 
-# Django setting
-REST_FRAMEWORK = {
-    'DEFAULT_THROTTLE_CLASSES': [
-        'greedybear.api.throttles.EventCollectorThrottle'
+### Event Schema Validation
+
+```python
+class EventCollectorSerializer(serializers.ModelSerializer):
+    VALID_EVENT_TYPES = [
+        'ssh_brute_force', 'http_scan', 'port_scan',
+        'telnet_brute_force', 'ftp_brute_force', 'rdp_scan',
+        'smtp_spam', 'dns_amplification', 'custom'
     ]
-}
+
+    def validate_source_ip(self, value):
+        try:
+            ipaddress.ip_address(value)
+        except ValueError:
+            raise serializers.ValidationError(f'Invalid IP address: {value}')
+        return value
+
+    def validate_source_port(self, value):
+        if not (1 <= value <= 65535):
+            raise serializers.ValidationError('Port must be 1–65535')
+        return value
+
+    def validate_timestamp(self, value):
+        # Reject future timestamps (with 60s tolerance)
+        if value > timezone.now() + timedelta(seconds=60):
+            raise serializers.ValidationError('Timestamp cannot be in the future')
+        return value
+
+    def validate(self, data):
+        if data.get('source_ip') == data.get('destination_ip'):
+            raise serializers.ValidationError(
+                'source_ip and destination_ip cannot be the same'
+            )
+        return data
 ```
 
-**Rate Limit Response:**
+### ViewSet
+
+```python
+class EventCollectorViewSet(viewsets.GenericViewSet):
+    authentication_classes = [EventCollectorTokenAuthentication]
+    permission_classes = [IsAuthenticated, IsEventCollector]
+    throttle_classes = [EventCollectorThrottle]
+    serializer_class = EventCollectorSerializer
+
+    def create(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        event = serializer.save(
+            injected_by=request.user,
+            source_token=request.auth,
+            status='pending'
+        )
+        async_task(
+            'greedybear.cronjobs.event_collector.process_collected_event',
+            event.id
+        )
+        return Response(
+            {'id': str(event.id), 'status': 'processing'},
+            status=status.HTTP_202_ACCEPTED
+        )
+
+    @action(detail=True, methods=['get'])
+    def status(self, request, pk=None):
+        event = get_object_or_404(
+            Event, id=pk, injected_by=request.user
+        )
+        return Response({
+            'id': str(event.id),
+            'status': event.status,
+            'created_at': event.created_at,
+            'processed_at': event.processed_at,
+            'error_message': event.error_message
+        })
 ```
-HTTP 429 Too Many Requests
+
+---
+
+## API Specification
+
+### Endpoint 1: Inject Event
+
+```
+POST /api/v1/events/collect/
+Authorization: EventToken <your-token>
+Content-Type: application/json
 
 {
-  "detail": "Request was throttled. Expected available in 3600 seconds."
-}
-```
-
-### Testing Strategy
-
-**Test Coverage Goal:** >80% on new code
-
-#### Unit Tests
-
-```python
-# tests/api/test_event_collector_serializer.py
-class EventCollectorSerializerTestCase(TestCase):
-    def test_valid_event(self): pass
-    def test_invalid_source_ip(self): pass
-    def test_same_source_dest_ip(self): pass
-    def test_future_timestamp(self): pass
-    def test_payload_too_large(self): pass
-    def test_invalid_severity(self): pass
-    def test_tags_limit(self): pass
-```
-
-#### Integration Tests
-
-```python
-# tests/api/test_event_collector_api.py
-class EventCollectorAPITestCase(TestCase):
-    def test_create_event_success_returns_202(self): pass
-    def test_create_event_no_auth_returns_401(self): pass
-    def test_create_event_no_write_scope_returns_403(self): pass
-    def test_rate_limiting_enforced(self): pass
-    def test_event_status_endpoint(self): pass
-    def test_error_response_format(self): pass
-    def test_async_processing_triggered(self): pass
-```
-
-#### End-to-End Tests
-
-```python
-# tests/integration/test_event_collection_workflow.py
-class EventCollectionWorkflowTestCase(TestCase):
-    def test_full_workflow_inject_to_completion(self):
-        # 1. Create token
-        # 2. Inject event
-        # 3. Task processes async
-        # 4. Check status
-        # 5. Verify ES indexed
-        # 6. Verify in dashboard
-        pass
-```
-
-### Processing Pipeline
-
-#### Step 1: Receive & Validate
-
-```python
-# ViewSet.create()
-serializer = EventCollectorSerializer(data=request.data)
-serializer.is_valid(raise_exception=True)  # Raises 400 if invalid
-```
-
-#### Step 2: Create Event Object
-
-```python
-event = serializer.save(
-    injected_by=request.user,
-    status='pending'
-)
-# Returns 202 immediately
-```
-
-#### Step 3: Queue Processing Task
-
-```python
-from django_q.tasks import async_task
-
-async_task('greedybear.cronjobs.event_collector.process_collected_event',
-           event.id)
-# Non-blocking, returns immediately
-```
-
-#### Step 4: Processing Task Executes (Async)
-
-```python
-def process_collected_event(event_id):
-    """
-    1. Fetch event
-    2. Enrich (WHOIS, threat intel, geolocation)
-    3. Index to Elasticsearch
-    4. Generate alerts (if severity >= high)
-    5. Mark as completed
-    """
-    event = Event.objects.get(id=event_id)
-
-    try:
-        # Enrich
-        event.extracted_artifacts = enrich_event(event)
-
-        # Index to ES
-        index_to_elasticsearch(event)
-
-        # Alerts
-        if event.severity in ['high', 'critical']:
-            generate_alert(event)
-
-        event.status = 'completed'
-        event.processed_at = timezone.now()
-        event.save()
-
-    except Exception as e:
-        event.status = 'failed'
-        event.error_message = str(e)
-        event.save()
-        logger.exception(f"Failed to process event {event_id}")
-```
-
-#### Step 5: Status Available
-
-```python
-# Client polls /api/v1/events/{id}/status/
-GET /api/v1/events/550e8400.../status/
-
-Response:
-{
-  "status": "completed",
-  "processed_at": "2026-03-18T14:30:05Z",
-  "error_message": null
-}
-```
-
-### Error Handling
-
-#### Schema Validation Errors (400)
-
-```json
-{
-  "errors": {
-    "source_ip": ["Invalid IPv4 address"],
-    "source_port": ["Ensure this value is less than or equal to 65535"],
-    "event_type": ["Not a valid choice. Valid choices are: ssh_brute_force, ..."]
-  }
-}
-```
-
-#### Authentication Errors (401/403)
-
-```json
-{
-  "detail": "Invalid token." // 401
+  "event_type": "ssh_brute_force",
+  "timestamp": "2026-03-19T14:30:00Z",
+  "source_ip": "203.0.113.50",
+  "destination_ip": "10.0.0.1",
+  "source_port": 54321,
+  "destination_port": 22,
+  "protocol": "ssh",
+  "severity": "high",
+  "payload": { "username_attempts": ["admin", "root"] },
+  "tags": ["brute-force", "external"],
+  "source_identifier": "cowrie-eu-01"
 }
 
-{
-  "detail": "Access denied. Missing required scope: events:write" // 403
-}
+→ 202 Accepted
+{ "id": "550e8400-...", "status": "processing" }
 ```
 
-#### Rate Limit Errors (429)
+### Endpoint 2: Check Status
 
-```json
-{
-  "detail": "Request was throttled. Expected available in 3600 seconds."
-}
+```
+GET /api/v1/events/collect/{id}/status/
+Authorization: EventToken <your-token>
+
+→ 200 OK
+{ "id": "550e8400-...", "status": "completed", "processed_at": "..." }
 ```
 
-#### Processing Errors (visible in status endpoint)
+### Error Responses
 
-```json
-{
-  "status": "failed",
-  "error_message": "Elasticsearch connection failed. Retry later.",
-  "created_at": "2026-03-18T14:30:00Z"
-}
-```
+| HTTP | Code | Meaning |
+|------|------|---------|
+| 400 | VALIDATION_ERROR | Invalid schema |
+| 401 | AUTH_FAILED | Missing/expired token |
+| 403 | PERMISSION_DENIED | Token lacks events:write |
+| 429 | THROTTLED | Rate limit exceeded |
 
 ---
 
 ## Implementation Timeline
 
-### Pre-GSoC (April, ~2 weeks)
-
-- [ ] Set up Discord and engage with mentors
-- [ ] Fix small issues (#1083, #1089) to build reputation
-- [ ] Get PR feedback process down
-- [ ] Review architecture with mentors
-- [ ] Finalize proposal based on feedback
-
-### GSoC Phase 1: Foundation (Weeks 1-2)
-
-**Deliverables:**
-- Event model migration (if needed)
-- EventCollectorToken model
-- EventCollectorSerializer with validation
-- Basic unit tests for serializer
-
-**PR:** Draft PR with models and serializers
-
-### GSoC Phase 2: API Implementation (Weeks 3-4)
-
-**Deliverables:**
-- Custom authentication class
-- Permission classes (IsEventCollector)
-- EventCollectorViewSet (POST endpoint)
-- Integration tests
-- Error response formatting
-
-**PR:** Draft PR with viewset and auth
-
-### GSoC Phase 3: Processing Pipeline (Weeks 5-6)
-
-**Deliverables:**
-- Django Q2 task for event processing
-- Enrichment pipeline (threat intel lookups)
-- Status endpoint implementation
-- Error tracking
-
-**PR:** Draft PR with cronjob and status
-
-### GSoC Phase 4: Quality & Testing (Weeks 7-8)
-
-**Deliverables:**
-- Comprehensive test coverage (>80%)
-- Rate limiting implementation
-- Edge case handling
-- Integration tests (end-to-end)
-
-**PR:** Draft PR with tests
-
-### GSoC Phase 5: Documentation & Polish (Weeks 9-10)
-
-**Deliverables:**
-- OpenAPI schema (auto-generated)
-- API documentation (Markdown guide)
-- Example scripts (cURL, Python, JavaScript)
-- Postman collection
-- Deployment documentation
-- Code review and refinements
-
-**PR:** Final PR ready for merge
-
-### Stretch Goals (If Ahead of Schedule)
-
-- [ ] Frontend token management UI
-- [ ] Dashboard statistics widget
-- [ ] Bulk event validation endpoint
-- [ ] Event filtering enhancements
-- [ ] Performance optimization (N+1 queries)
+| Week | Focus | Deliverables |
+|------|-------|-------------|
+| 1 | Pre-GSoC contributions (now) | 2+ PRs merged, environment running |
+| 2 | Event model + Token model | Migrations, model tests |
+| 3 | Serializer + validation | All field validators, cross-field checks |
+| 4 | Auth class + permissions | Token auth, scope check, throttle |
+| 5 | ViewSet + URL routing | POST endpoint, status endpoint |
+| 6 | Django Q2 processing task | Async event processing, error tracking |
+| 7 | Rate limiting + edge cases | Per-token rate limiting, error scenarios |
+| 8 | Test coverage ≥80% | Unit + integration + E2E tests |
+| 9 | Documentation | OpenAPI schema, Markdown guide, examples |
+| 10 | Frontend token management UI | CRUD for tokens, copy-to-clipboard |
+| 11 | Dashboard statistics widget | Events per source, error rates |
+| 12 | Final review + polish | Performance optimization, deployment docs |
 
 ---
 
-## Success Criteria
+## Testing Strategy
 
-### Must-Have Deliverables
+### Test Coverage Target: ≥80% on new code
 
-- [x] Event Collector API endpoint (`POST /api/v1/events/collect/`)
-- [x] Token-based authentication with scopes
-- [x] DRF serializer with comprehensive validation
-- [x] Rate limiting per token
-- [x] Asynchronous processing via Django Q2
-- [x] Status endpoint to track event processing
-- [x] Error handling and meaningful error responses
-- [x] >80% test coverage
-- [x] OpenAPI schema documentation
-- [x] Markdown API guide with examples
-- [x] Database migrations
-- [x] Code follows Ruff style (100% pass)
+```python
+# Key test cases
+class EventCollectorAPITests(TestCase):
 
-### Nice-to-Have Deliverables
-
-- [ ] Frontend token management UI
-- [ ] Dashboard statistics widget
-- [ ] Postman collection
-- [ ] Example scripts in multiple languages
-- [ ] Performance optimization (N+1 queries)
-- [ ] Monitoring/alerting for failed events
-
-### Quality Metrics
-
-- **Code Coverage:** >80% for new code
-- **Test Pass Rate:** 100%
-- **Ruff Compliance:** 0 warnings/errors
-- **PR Reviews:** All feedback addressed within 24 hours
-- **Deployment:** Zero regressions in existing APIs
-
----
-
-## Why This Project?
-
-### Personal Motivation
-
-I've been working with Django and REST APIs for 3+ years, primarily in backend infrastructure. The Event Collector API project appeals because it combines:
-
-1. **Architectural Challenge:** Designing a secure, scalable API from scratch requires deep understanding of authentication, validation, async processing, and error handling.
-
-2. **Real-World Impact:** Honeypot intelligence directly improves security posture across organizations. Being part of that pipeline is meaningful.
-
-3. **Mentorship Opportunity:** Learning from Matteo Lodi (Django architect) and Tim Leonhard (frontend) directly accelerates my growth in scalable system design.
-
-4. **Open Source Contribution:** Contributing to Honeynet (respected in cybersecurity) builds credibility and gives back to the community.
-
-### Why GreedyBear Specifically
-
-- **Active Community:** 432 merged PRs, 29 contributors — healthy, engaged project
-- **Clear Scope:** Event Collector API is well-defined with clear boundaries (no scope creep risk)
-- **Modern Stack:** Django 5.x, DRF, PostgreSQL, Elasticsearch — current best practices
-- **Production-Ready:** Not an experimental project; real organizations depend on GreedyBear
-- **Mentorship Quality:** Tim and Matteo are active, responsive mentors with deep expertise
+    def test_valid_event_returns_202(self): pass
+    def test_invalid_ip_returns_400(self): pass
+    def test_future_timestamp_returns_400(self): pass
+    def test_same_source_dest_ip_returns_400(self): pass
+    def test_missing_auth_returns_401(self): pass
+    def test_expired_token_returns_401(self): pass
+    def test_no_write_scope_returns_403(self): pass
+    def test_rate_limit_exceeded_returns_429(self): pass
+    def test_async_processing_triggered(self): pass
+    def test_status_endpoint_shows_completed(self): pass
+    def test_injected_event_indexed_to_elasticsearch(self): pass
+```
 
 ---
 
 ## About the Applicant
 
-**Name:** Zakir Jiwani
-**GitHub:** @zakirjiwani
-**Email:** [your-email@domain.com]
-**Location:** [Your City/Country]
-**Timezone:** [e.g., US Eastern UTC-5]
+**Zakir Jiwani** | GitHub: [JiwaniZakir](https://github.com/JiwaniZakir) | EST
 
-### Experience
+My background for this project:
 
-**Backend Development (3+ years)**
-- Python/Django: Built REST APIs, microservices, data pipelines
-- Databases: PostgreSQL, MongoDB, Elasticsearch
-- Async Tasks: Celery, RQ, now learning Django Q2
-- Testing: pytest, coverage, TDD practices
+**Django/DRF (The Core Stack):**
+- Built **aegis**, a personal intelligence platform using FastAPI/Celery — same async task queue pattern as Django Q2
+- Built **evictionchatbot**, an AI legal chatbot with React/Vite frontend — full-stack experience relevant to the frontend token management UI
+- Deep familiarity with REST API design, token auth, and input validation
 
-**Projects**
-- [GitHub project 1]: [Brief description]
-- [GitHub project 2]: [Brief description]
+**Security-Adjacent Context:**
+- **Prowler** in my DevOps stack — AWS/GCP security scanning. I understand the threat intelligence domain at a systems level.
+- **aegis** is explicitly a security/intelligence platform — I understand the value of multi-source threat data aggregation
 
-**Relevant Skills for GSoC**
-- [x] Django/DRF expertise (REST API design)
-- [x] PostgreSQL (data modeling, migrations)
-- [x] Authentication/security patterns
-- [x] Testing (unit, integration, E2E)
-- [x] Git/GitHub workflow (commit messages, PR discipline)
-- [x] Async task queues (Celery, now Django Q2)
-- [x] API design (validation, error handling)
+**Testing Discipline:**
+- 338 tests on aegis. 209 tests on sentinel. I write high-coverage test suites by default.
+- My approach: every serializer field gets a test, every auth edge case gets a test, every async task gets a test.
 
-**Communication**
-- Available 40+ hours/week during GSoC
-- Responsive to feedback (target: <24 hours)
-- Proactive status updates (weekly)
-- Comfortable with async (Discord, GitHub) and sync (video calls) communication
+**Why Event Collector Specifically:**
+The core insight — that GreedyBear becomes dramatically more useful when it accepts data from any honeypot, not just T-Pot — is the right insight. Building a clean ingestion API that enterprises can rely on is exactly the kind of foundational infrastructure work I want to do. The combination of auth design, rate limiting, async processing, and data validation is technically interesting, not just mechanically repetitive.
 
 ---
 
-## Risks & Mitigation
+## Questions for Mentors
 
-### Risk 1: Elasticsearch Integration Complexity
-
-**Risk:** Event indexing to Elasticsearch might be more complex than anticipated
-
-**Mitigation:**
-- Study existing ES integration in codebase (PR #882, etc.)
-- Get help from mentors early if blocked
-- Fall back to PostgreSQL-only mode if ES issues arise (still functional)
-- Well-scoped: ES is secondary to core API
-
-### Risk 2: Django Q2 Learning Curve
-
-**Risk:** Recent migration to Django Q2; less familiar than Celery
-
-**Mitigation:**
-- Read PR #789 (Django Q2 migration) carefully
-- Review existing Django Q2 tasks in `/cronjobs/`
-- Ask Matteo for guidance on best practices
-- Simple task pattern (fetch, process, save) well-supported by Q2
-
-### Risk 3: Scope Creep
-
-**Risk:** Temptation to add frontend features beyond scope
-
-**Mitigation:**
-- Strict scope definition upfront (documented above)
-- Mentors will review scope during planning
-- If ahead of schedule, discuss stretch goals with mentors
-- API-focused: frontend is nice-to-have, not critical
-
-### Risk 4: Timeline Slippage
-
-**Risk:** Unexpected complications delay deliverables
-
-**Mitigation:**
-- Buffer in timeline (10-week schedule for 8-week GSoC)
-- Weekly check-ins with mentors to catch issues early
-- Deliver in phases (incremental PRs) rather than monolithic PR
-- Prioritize must-haves; scope down if needed
+1. **Auth approach:** Custom EventCollectorToken (as proposed) vs. extending DRF's built-in TokenAuthentication — any preference or existing precedent?
+2. **Rate limiting:** Per-token (as proposed) or global? Is 1000/hour a reasonable default?
+3. **Elasticsearch indexing:** Separate index for injected events, or merge with T-Pot events?
+4. **Frontend scope:** Token management UI in GSoC scope, or defer and focus entirely on backend?
+5. **Event enrichment:** What threat intelligence lookups should be included in the processing task for v1? (IP geolocation only, or also WHOIS?)
 
 ---
 
-## References & Inspiration
-
-### Related GreedyBear Features
-
-- **Authentication System:** `/authentication/` directory, existing token patterns
-- **DRF ViewSets:** `/api/views.py` — existing CRUD patterns
-- **Django Q2 Tasks:** `/cronjobs/` directory — task queue examples
-- **Elasticsearch Integration:** `indexing.py`, recent PRs
-
-### External Resources
-
-- Django REST Framework: https://www.django-rest-framework.org/
-- Django Q2 Documentation: https://django-q.readthedocs.io/
-- API Design Best Practices: RESTful API guidelines
-- OpenAPI Specification: https://spec.openapis.org/
-
----
-
-## Conclusion
-
-The Event Collector API is a strategic feature that transforms GreedyBear from a single-source intelligence platform into a multi-source threat intelligence hub. It addresses a real need in the community (centralized honeypot intelligence collection) and demonstrates solid engineering fundamentals (authentication, validation, async processing, testing).
-
-I'm excited about the opportunity to contribute meaningfully to Honeynet's mission while learning from expert mentors. The project scope is well-defined, achievable within 10 weeks, and has clear success criteria.
-
-I'm committed to following GreedyBear's contribution guidelines, maintaining code quality, and being responsive to feedback throughout the GSoC period.
-
----
-
-**Proposal Version:** 1.0
-**Last Updated:** March 18, 2026
-**Status:** Ready for mentor feedback
-
----
-
-## Appendix: Questions for Mentors
-
-Before finalizing this proposal, I have these questions for Tim and Matteo:
-
-1. **Authentication Scope:** Would you prefer custom token implementation (as proposed) or DRF's built-in TokenAuthentication? Any precedent in codebase?
-
-2. **Rate Limiting:** Should rate limits be configurable per token, or global? Proposed per-token, but want to confirm.
-
-3. **Event Enrichment:** What threat intelligence sources should I integrate? (IP geolocation, reputation lookups, domain WHOIS?) Or keep it minimal initially?
-
-4. **Frontend:** Should token management UI be part of GSoC scope, or can I defer to Phase 2/3 and focus on backend API first?
-
-5. **Elasticsearch Indexing:** Should injected events go to separate indices (e.g., `events-injected-*`) or mix with T-Pot events? Implications for querying?
-
-6. **Backward Compatibility:** Any existing APIs that might conflict with new `/api/v1/events/collect/` endpoint? Or should I use different path?
-
-7. **Documentation:** Any preferred format/tool for API docs? (Swagger UI, Postman, Markdown guides, etc.)
-
-These clarifications will help refine the proposal before GSoC officially starts.
-
----
-
+**Status:** Near-final draft — ready for mentor review
+**Last Updated:** March 2026
+**Submitted by:** Zakir Jiwani (JiwaniZakir)

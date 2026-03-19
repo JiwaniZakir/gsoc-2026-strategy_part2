@@ -1,547 +1,304 @@
-# Open Source Contribution Playbook
+# Open Source Contribution Playbook — Blitz Edition
 
-A practical guide to standing out as a GSoC applicant and contributing effectively to open source projects.
-
----
-
-## 1. Standing Out as a GSoC Applicant
-
-### What Actually Matters
-
-GSoC reviewers see hundreds of applications. Here's what separates strong candidates from noise:
-
-#### Meaningful Contributions Over Volume
-
-- **Don't:** Open 10 trivial PRs (typo fixes, minor refactors with no clear value)
-- **Do:** Open 2–3 PRs that show you understand the codebase, testing philosophy, and project needs
-- One PR that fixes a real bug with proper tests beats five typo fixes
-
-#### Deep Codebase Understanding
-
-- Mentors want someone who grasps *architecture*, not just syntax
-- Reference specific design patterns used in the codebase
-- Show you've read the contribution guide, architecture docs, and existing PRs carefully
-- In your proposal, mention specific files/modules you've studied
-
-**Example:** "I noticed the validation layer uses a decorator pattern across the auth modules. I'm proposing to extend this to the API gateway layer, which currently has inline checks."
-
-#### Constructive Community Participation
-
-- Answer questions in issues/discussions (even if you're new—show effort)
-- Leave thoughtful code review comments on other PRs
-- Ask *smart* questions: "I see you're using X pattern here. Does that mean Y is handled in Z module?" vs. "How do I run this?"
-- Show respect for maintainers' time; they remember contributors who *reduce* their workload
-
-#### Proposal That Matches Project Reality
-
-- Don't propose your dream feature; propose what the maintainers actually need
-- Reference open issues, project roadmaps, and recent discussions
-- Show you've talked to mentors (or at least engaged with the community)
-- Be specific about deliverables: "Implement X endpoint with Y test coverage, returning Z API contract"
+This is the speed-optimized version of contribution tactics. The goal: get PRs merged and mentors knowing your name within 5 days, not 5 weeks.
 
 ---
 
-## 2. Writing PRs That Get Merged Fast
+## 1. Blitz-Mode Mindset
 
-### The Anatomy of a Fast-Merging PR
+You have 5 days and 5 projects. Standard "take it slow" advice does not apply.
 
-#### Title and Link
+**The Rules:**
+1. **No perfect PRs.** Good and submitted beats perfect and pending.
+2. **Draft PR first, then finish.** Creating a draft PR signals intent to maintainers within hours, not days.
+3. **Address feedback immediately.** When a reviewer comments, respond within 2 hours during waking hours. This alone puts you in the top 5% of applicants.
+4. **Post intros before PRs.** A cold PR with no prior introduction gets slower review than one from someone the community has seen.
+5. **Multiple PRs per day is fine** — as long as each is focused, small, and passes CI. Don't batch scope; batch submissions.
+
+---
+
+## 2. Speed-PR Framework: 0-to-Submitted in 2 Hours
+
+### Step 1: Issue Selection (15 min)
+
+Find issues that match ALL of these:
+- `good-first-issue` OR `documentation` OR `bug` label
+- Has clear, bounded scope (not "redesign X" or "refactor Y")
+- No recent activity from another contributor
+- Filed in the last 6 months (so the codebase is current)
+
+**Speed filter:** If you can't describe the fix in one sentence, skip it. Pick the next one.
+
+### Step 2: Claim & Orient (10 min)
+
+Post on the issue before coding:
 
 ```
-[BAD] Fix stuff
-[GOOD] Fix race condition in connection pool shutdown
+I'd like to work on this. My approach:
+1. [Step 1]
+2. [Step 2]
 
-Closes #437
+Starting now — will have a draft PR up within a couple hours.
 ```
 
-- Title should clearly state the problem or change
-- Link to the issue immediately (GitHub auto-links with "Closes #123")
-- Saves maintainers from wondering *why* you're changing things
+This signals momentum. You don't need approval first for `good-first-issue` items — just post and start.
 
-#### Description: What / Why / How
+### Step 3: Branch + Fix (45 min)
+
+```bash
+git checkout -b fix/issue-NNN-short-description
+# Make the change
+# Run tests/linting
+```
+
+Keep it small. If you notice related issues, make a note and open a separate PR. Do NOT scope-creep.
+
+### Step 4: Draft PR Immediately (5 min)
+
+Push and open as a draft the moment you have *something* running — even if tests aren't perfect yet:
+
+```bash
+git push origin fix/issue-NNN-short-description
+# Open PR, mark as Draft
+```
+
+Draft PRs get eyes on them fast. Maintainers can start reviewing context before you finish.
+
+### Step 5: Polish & Convert (25 min)
+
+- Fix remaining issues
+- Run the full test suite
+- Write a complete PR description (see template below)
+- Convert Draft → Ready for Review
+- Post a message in the community channel: "Opened PR #NNN for issue #MMM"
+
+**Total time: ~2 hours per PR.** You can do 3–4 per day across different repos.
+
+---
+
+## 3. PR Description Template (Copy-Paste This Every Time)
 
 ```markdown
 ## What
-Fixes a race condition where pending connections are not properly
-cleaned up during connection pool shutdown.
+[One sentence: what this PR does]
 
 ## Why
-When the app receives a SIGTERM, the pool shutdown completes before
-all in-flight requests finish, leaving connections open and causing
-file descriptor leaks. This is especially noticeable under high load.
+[Why this change matters — reference the issue]
+Closes #[issue number]
 
 ## How
-- Added a graceful shutdown timeout (configurable, default 30s)
-- Queue pending connections in a thread-safe deque during shutdown
-- Wait for active connections to finish before closing
-- Tests added in test_pool_shutdown.rs
+- [Change 1]
+- [Change 2]
+- [Change 3, if any]
 
 ## Testing
-- Unit tests for timeout and cleanup edge cases
-- Integration test with 100 concurrent connections
-- Manual test: `./scripts/test_shutdown_leak.sh`
+- [x] Tests pass locally (`cargo test` / `npm test` / `pytest`)
+- [x] Linting passes
+- [x] No unrelated changes
+- [ ] New tests added (if applicable)
+
+## Notes for Reviewer
+[Any context that helps review speed — design decision, tradeoff, question]
 ```
 
-#### Small, Focused Changes
-
-- **One responsibility per PR**
-- If you need 1000 lines, consider if it's actually 2 PRs
-- Maintainers are more likely to merge a 50-line focused change than a 500-line refactor + feature combo
-
-**Example split:**
-- PR 1: Refactor validation layer (only refactoring, no behavior change)
-- PR 2: Add new validation rule (only new logic, uses refactored layer)
-
-#### Screenshots or Visual Evidence (When Applicable)
-
-If touching UI, include a before/after screenshot.
-
-```markdown
-## Before
-[screenshot of broken button alignment]
-
-## After
-[screenshot of fixed layout]
-```
-
-#### Test Coverage Proof
-
-```markdown
-## Tests
-- [x] Unit test for happy path
-- [x] Unit test for timeout scenario
-- [x] Integration test with real connection pool
-- [x] No existing tests broken (CI green)
-
-Test results: 127 passed, 0 failed
-Coverage added: pool_shutdown.rs (95%)
-```
-
-#### Addressing CI Failures Immediately
-
-If tests fail:
-1. Don't ignore them
-2. Fix them *in the same PR* (or ask in a comment if you need guidance)
-3. Maintainers see unresolved CI failures as "not ready"
-
-```markdown
-## CI Status
-- [x] Tests passing (was failing in commit abc123, fixed in d4e5f6)
-- [x] Linter passing
-- [x] Type checks passing
-```
+**Why this works:** Reviewers know exactly what to look at. Faster review = faster merge.
 
 ---
 
-## 3. Professional Open Source Communication
+## 4. Getting PRs Merged in 24–48 Hours
 
-### First Message to the Community
+The bottleneck is almost never code quality — it's communication latency. Optimize that.
 
-**Context:** You're introducing yourself as someone who wants to contribute during GSoC.
+### Tactic 1: Announce in Discord When PR is Ready
 
-```markdown
-Hi [project name] team! I'm Zakir, a CS student interested in
-[specific project area, e.g., "dataflow systems and Rust"]. I've
-been exploring the codebase and am excited about [specific feature
-or issue, e.g., "the new scheduler redesign in issue #521"].
+Don't just push the PR and wait. Post in the relevant channel:
 
-I'd like to contribute meaningfully over the next few weeks and
-eventually apply for GSoC. I'm starting with [specific issue/area],
-and I'd appreciate any guidance on the best approach.
-
-Thanks for building this project!
+```
+Just opened PR #NNN implementing [what] for issue #MMM.
+Would appreciate a review when you have a moment — it's a focused [X lines] change.
 ```
 
-**What works:**
-- Specific (not "I like your project")
-- Shows you've done homework
-- Clear intent (GSoC applicant)
-- Asks for *guidance*, not approval
-- Respectful tone
+This is not spamming. One message is expected. Maintainers often miss GitHub notifications but see Discord.
 
-### Asking Smart Questions
+### Tactic 2: Address Feedback Immediately
 
-**Bad question:**
-```
-How do I make a PR? The build is broken. Help?
-```
+The moment you get review comments:
+1. Read them all before responding to any
+2. Respond to every comment — even to say "Fixed in [commit hash]"
+3. Push the fix
+4. Post: "Addressed all feedback in [commit hash]. CI green."
 
-**Good question:**
-```
-I'm working on issue #234 (adding retry logic). I see the config
-is loaded in main.rs, but where should the retry_policy struct be
-defined? I've checked config.rs and builder.rs but didn't find the
-pattern used elsewhere. Any pointers?
-```
+Response within 2 hours collapses a 3-day review cycle to same-day.
 
-**Why it works:**
-- Shows you tried first
-- Specific location reference
-- Demonstrates you read the code
-- Easy to answer (5-second pointer vs. teaching you how to PR)
+### Tactic 3: Make CI Green Before Posting
 
-### Responding to Code Review
+Maintainers will not review a PR with red CI. Run this locally before opening:
 
-**Reviewer comment:**
-```
-Why use a HashMap here instead of a BTreeMap? Insertion order
-matters for the output, so BTreeMap seems more semantically correct.
-```
+**TypeScript/Node (Accord):** `npm test && npm run lint && npm run build`
 
-**Bad response:**
-```
-OK I'll change it
-```
+**Rust (dora-rs):** `cargo fmt --all && cargo clippy --workspace && cargo test --workspace`
 
-**Good response:**
-```
-You're right, I didn't consider the ordering requirement. I used
-HashMap for the O(1) lookup in the inner loop (line 42), but
-BTreeMap's O(log n) insertion won't be the bottleneck there since
-we only have ~100 entries. I'll switch to BTreeMap to make the
-intent clearer and match the pattern used in data_builder.rs.
+**Python (GreedyBear/VulnerableCode/OCF):** `ruff check . && ruff format . && pytest`
 
-Thanks for catching that!
-```
+Never submit with known CI failures.
 
-**Why it works:**
-- Shows you understand the trade-off
-- Explains your original thinking (not defensive)
-- Demonstrates you thought about performance
-- References similar code in the project
-- Grateful tone
+### Tactic 4: Small PRs Merge Faster
 
-### Following Up Without Being Pushy
+The data is clear: PRs under 200 lines merge 3× faster than PRs over 500 lines. If you're over 200 lines:
+- Can it be split? Usually yes.
+- PR 1: The refactor (no behavior change)
+- PR 2: The feature using the refactor
 
-**Don't:**
-```
-Hi, I commented on my PR 3 days ago. When will you merge it?
-```
+Two smaller PRs often merge before one large one would get a first review.
 
-**Do:**
-```
-FYI, I've addressed the review comments in commit abc123.
-No rush—let me know if there's anything else I can help with!
-```
+### Tactic 5: Assign a Reviewer
 
-**Or if it's been a week:**
-```
-Friendly bump on #456 when you have time. In the meantime,
-I'm working on issue #234 if you'd like to see a draft.
-```
+On GitHub, use the right-sidebar to request a review from a maintainer you've already interacted with. Don't request from someone who hasn't seen your work yet — find the person who commented on related issues.
 
 ---
 
-## 4. Common Mistakes to Avoid
+## 5. Multiple PRs Per Day: Cross-Repo Strategy
 
-### Claiming Issues Without Following Up
+During the 5-day blitz, target at least one PR submission to a different project each day.
 
-```markdown
-[BAD] "I'll fix issue #123" (then ghosting for 2 weeks)
-```
+**Sample Day:**
+- 10:00 — PR to Accord (docs)
+- 14:00 — PR to GreedyBear (bug fix)
+- 19:00 — PR to Open Climate Fix (test)
 
-**Impact:** Maintainer can't assign the issue, others can't start; trust erodes.
+**What makes this work:**
+- Each repo has different maintainer timezones (EU vs US)
+- While waiting for Repo A review, work on Repo B
+- PRs compound over days — by Day 3 you have 6–9 live PRs across repos
 
-**Fix:** Only claim an issue when you're starting *that day*. If you need to step back, say so immediately.
-
-```markdown
-[GOOD] "I'm starting on #123 today. I'll have a first PR up by
-Thursday."
-
-[Also GOOD] "I started on #123 but hit a blocker with [specific
-thing]. Can you point me to docs on [area]? If I'm stuck after
-researching, I'll let you know so others can pick it up."
-```
-
-### Massive, Unfocused PRs
-
-```
-PR #999: "Add features and refactor stuff"
-- Rename 50 files
-- Refactor the entire validation layer
-- Add 3 new API endpoints
-- Fix 2 bugs
-- Add some tests
-
-[1,500 lines changed]
-```
-
-**Why this is bad:**
-- Impossible to review in one session
-- Risk of one bad part blocking the whole thing
-- Hard to revert if something breaks
-- Shows lack of project prioritization
-
-**Fix:** Split into 4–5 PRs:
-1. File renames (mechanical, easy to review)
-2. Validation layer refactor (bigger, but single-purpose)
-3. New API endpoints (feature, depends on #2)
-4. Bugfix #1
-5. Bugfix #2
-
-### Not Reading the Contribution Guide
-
-```
-[BAD]
-- No commit message format (guide says "Closes #X: description")
-- Wrong test file location (guide says tests/ not test/)
-- TypeScript in a Rust project, no explanation
-- No PR template filled out
-```
-
-**Fix:** Before you write code, read:
-1. CONTRIBUTING.md or CONTRIBUTING/ folder
-2. CODE_OF_CONDUCT.md
-3. Recent merged PRs (to see the pattern)
-4. Linter config (.eslintrc, .clippy.toml, etc.)
-
-Literally take 20 minutes. It's the difference between a mergeable PR and rework.
-
-### AI-Generated Code Without Review
-
-```
-[BAD]
-# Generated entire PR with ChatGPT
-# Didn't understand half of it
-# Submitted with "Let me know if this works"
-```
-
-**Why it fails:**
-- LLMs hallucinate; code doesn't always match the project's patterns
-- Maintainers can tell (inconsistent style, overengineered solutions)
-- Shows you didn't learn anything
-- Tests are often incomplete
-
-**What to do instead:**
-- Use LLMs for brainstorming, not wholesale generation
-- Understand *every line* you submit
-- Test thoroughly before submitting
-- Add comments explaining why you chose that approach (especially if non-obvious)
-
-```markdown
-[GOOD]
-I used ChatGPT to help sketch the algorithm, then:
-- Rewrote it to match the project's error handling pattern
-  (Result<T> with custom Error types)
-- Added all test cases I could think of
-- Verified it performs within SLA on large datasets
-- Checked style against existing code
-
-Tests: 42 passed, coverage 89%
-```
-
-### Ignoring CI Failures
-
-```
-[BAD]
-PR #123 submitted
-- Linter failing (red X)
-- 3 tests failing (red X)
-- "Looks good to me!"
-```
-
-**Fix:** Always run locally first:
-```bash
-cargo test
-cargo clippy --all-targets
-cargo fmt --check
-npm test  # or equiv
-npm run lint
-```
-
-Don't submit until these pass. It signals you care about quality.
+**What kills it:**
+- Scope-creeping any single PR
+- Waiting for feedback before starting the next one
+- Not having environments set up for all repos from Day 1
 
 ---
 
-## 5. Handling PR Rejection Gracefully
+## 6. Community Engagement: Speed Version
 
-### When a Maintainer Says "No"
+### Day 1 Intro Template (Post in Each Community)
 
-**Scenario:** Your PR is closed with "This doesn't fit our roadmap right now."
-
-**Don't:**
 ```
-Why? This feature is important! You should reconsider.
-```
+Hi! I'm Zakir — CS student working on AI/ML systems (LangChain, LangGraph, DSPy)
+and systems programming (Rust). I'm contributing as a GSoC 2026 applicant for
+[project area].
 
-**Do:**
-```
-Thanks for the feedback. I understand this isn't aligned with the
-current roadmap. For future contributions, are there specific areas
-you'd prioritize over this? I want to focus on issues that move the
-project forward.
+I just submitted PR #NNN (linked) and am starting to work on [next issue].
+
+Looking forward to contributing — happy to answer questions or help other
+contributors where I can.
+
+GitHub: JiwaniZakir
 ```
 
-**What happened:**
-- You acknowledged their decision
-- You asked for guidance (shows growth mindset)
-- You repositioned for the *next* contribution
-- You didn't burn bridges
+**Key:** Lead with the PR link. It proves you're a contributor, not just a lurker.
 
-### When Code Review Asks for Major Changes
+### Engaging in Code Review Without Your Own PR
 
-**Reviewer:** "This approach won't scale to 10,000 items. Can you redesign?"
+Even before your PRs are reviewed, add value by reviewing others:
+- Find a PR that's been open >3 days with no review
+- Leave a substantive comment (not just "LGTM") — "I noticed this edge case..."
+- Mention it in Discord: "Left some notes on PR #NNN — hope it helps"
 
-**Options:**
+This builds community presence faster than any single PR.
 
-**Option A: Iterate (Often the right call)**
-```
-Good point about scalability. Let me redesign using a
-priority queue instead of a Vec. I'll have a revised
-version by [day].
-```
+### When to Ask Mentor Questions
 
-**Option B: Discuss if unsure**
-```
-I see the concern about scale. Before I redesign,
-would you prefer:
-A) Priority queue (better insert perf, worse memory)
-B) Lazy-loaded batching (more complex, best perf)
+Ask exactly one high-quality technical question per project per day. Make it:
+- Specific (reference file + line number)
+- Show you've read the code
+- Have a concrete answer expected ("Should this be X or Y?")
 
-What aligns better with the project's constraints?
-```
-
-**Option C: Withdraw gracefully (Rare, but valid)**
-```
-You're right, this approach has fundamental limits I didn't
-anticipate. I'll step back and study the codebase more before
-tackling this. Thanks for the honest feedback!
-```
-
-### Extracting Lessons
-
-After rejection or major rework, do this:
-
-1. **Understand why** — Ask if you're not clear
-2. **Document it** — "Oh, they always prefer X over Y" (helps next time)
-3. **Don't dwell** — Move to the next issue (maintainers notice this resilience)
-
-```markdown
-[In your notes]
-- Accord Project: Prefers TypeScript interfaces over types
-  (saw this in 3 PRs, confirmed in review comment)
-- dora-rs: Always wants perf benchmarks if touching critical path
-- GreedyBear: Very strict on input validation, even in internal APIs
-```
+**Do not** ask setup questions, documentation questions, or questions answered in READMEs. That signals you haven't done homework.
 
 ---
 
-## 6. Template Messages
+## 7. Handling the 5-Day Proposal Sprint
 
-### Template: First Message to a Project
+Writing proposals while contributing is the hardest part of the blitz. Timebox it.
 
-```markdown
-Hi [project name] team! I'm [your name], a CS student interested
-in [specific area, e.g., "systems programming and Rust"]. I've been
-exploring the codebase and am impressed by [something specific,
-e.g., "the modular architecture of the dataflow engine"].
+### Proposal Writing Schedule
 
-I'm planning to contribute meaningfully over the next few weeks and
-would like to apply for GSoC 2026. I'm starting with [specific
-issue, e.g., "improving test coverage in the scheduler module"],
-and I'd appreciate any guidance on the best approach or things to
-watch out for.
+| Day | Proposal Work |
+|-----|--------------|
+| Day 1 (Mar 19) | Write title + 3-sentence synopsis + key deliverables for all 5 |
+| Day 2 (Mar 20) | Full Problem Statement + Technical Approach for top 2 |
+| Day 3 (Mar 21) | Complete Timeline + Deliverables for all 5 |
+| Day 4 (Mar 22) | "Why This Project" + "About Me" for all 5; proposals 1–3 review-ready |
+| Day 5 (Mar 23) | Final pass + incorporate mentor feedback + submit |
 
-Thanks for building this project. I'm excited to contribute!
+### Proposal Speed Hack: Reference Your PRs
+
+The strongest signal in a GSoC proposal is a link to a merged PR. Even one merged PR before submission is worth more than 500 words of motivation. In each proposal:
+
+```
+I contributed [PR #NNN: description] and [PR #MMM: description].
+Through this work I discovered [specific insight about the codebase].
+This informs my approach to [GSoC project] because...
 ```
 
-### Template: Issue Comment (Asking to Work on Something)
-
-```markdown
-Hi! I'd like to work on this issue. I've looked at the codebase
-and have a rough approach in mind:
-
-1. [Step 1, specific]
-2. [Step 2, specific]
-3. [Step 3, specific]
-
-I have a question about [specific thing]: [question]
-
-I'll open a draft PR by [date] and would love feedback on the
-approach before I finish the implementation. Thanks!
-```
-
-### Template: PR Description
-
-```markdown
-## Summary
-[One sentence what this PR does]
-
-## Problem
-[What problem does this solve?]
-
-## Solution
-[How does this PR solve it? Approach and key design decisions]
-
-## Testing
-- [ ] Unit tests added
-- [ ] Integration tests added
-- [ ] Manual testing done (describe how)
-
-## Checklist
-- [ ] Followed contribution guidelines
-- [ ] Tests passing locally
-- [ ] No breaking changes
-- [ ] Documentation updated (if applicable)
-
-## Related
-Closes #[issue number]
-Related to #[other issue number] (if applicable)
-```
-
-### Template: Code Review Response
-
-```markdown
-Thanks for the review! I've addressed the comments:
-
-1. **[Point 1]:** Changed to [change]. This [why it's better].
-2. **[Point 2]:** Good catch. I didn't consider [thing].
-   Changed to [approach], which [benefit].
-3. **[Point 3]:** I explored [alternative], but stuck with
-   [current] because [reason]. Open to other thoughts though!
-
-Updated in commit [hash]. Tests still passing.
-```
-
-### Template: Mentor Outreach
-
-```markdown
-Hi [mentor name],
-
-I'm [your name], a CS student interested in contributing to
-[project] during GSoC 2026. I've been working on [specific
-contribution], and I wanted to reach out because [reason]:
-
-- I'm considering proposing [specific idea] for my GSoC project
-- I'd like guidance on [specific technical question]
-- I wanted to make sure [idea] aligns with the project roadmap
-
-I'm planning to [concrete next step] by [date], and I'd appreciate
-any thoughts or feedback when you have time.
-
-Thanks for your time!
-```
+This takes 3 sentences and dramatically increases your acceptance odds.
 
 ---
 
-## Summary: The GSoC Edge
+## 8. What Separates Top Applicants
 
-**What works:**
-- Show up, stay present, keep learning
-- Make 2–3 *great* contributions, not 10 okay ones
-- Read before you code
-- Engage genuinely with the community
-- Propose something that *matters* to the project, not just you
+Based on past GSoC evaluations, top accepted applicants all have:
 
-**What doesn't:**
-- Volume of PRs
-- Ignoring feedback
-- Assuming you know better
-- Ghosting on claimed issues
-- Overselling yourself
+1. **2+ PRs merged before proposal deadline** — not just submitted
+2. **Direct interaction with at least one named mentor** — in Discord or GitHub
+3. **A proposal that references specific files/issues** — not generic language
+4. **Responsive review cycle** — they addressed feedback within hours, not days
+5. **Community visibility** — multiple comments, not just their own PRs
 
-Maintainers pick GSoC contributors they'd *want to work with*. Be that person.
+**Bottom line:** A "good enough" proposal + strong contribution history beats a perfect proposal + no contributions. Every time.
 
 ---
 
-**Last Updated:** March 18, 2026
+## 9. Common Blitz Mistakes to Avoid
+
+### Mistake 1: Waiting for Issue Assignment Before Starting
+For `good-first-issue` items, post your plan and start. Don't wait 24 hours for a maintainer to say "go ahead." They'll see your PR.
+
+### Mistake 2: Submitting the Same Type of PR to Every Repo
+Variety signals range. Documentation fix + bug fix + test improvement looks better than 3 documentation fixes.
+
+### Mistake 3: Not Following Project-Specific Norms
+- **dora-rs:** `@dora-bot assign me` in issues. Discuss non-trivial changes first.
+- **GreedyBear:** Branch from `develop`. Draft PR within 1 week of assignment. Ruff must pass.
+- **Accord:** Conventional commits format. ESLint must pass.
+- **VulnerableCode:** Sign DCO before first commit. Follow black/isort formatting.
+- **OCF:** Comment on issue first. pytest must pass.
+
+Missing these gets PRs rejected on process, not code quality.
+
+### Mistake 4: Proposal with No Specifics
+Bad: "I will implement the feature using best practices."
+Good: "I will implement `MockNode` in `dora-test-utils/src/mock_node.rs`, exposing `send_input()` and `receive_output()` APIs, addressing the gap identified in issue #1455."
+
+### Mistake 5: Ghosting PRs Mid-Blitz
+If you open a PR on Day 1 and don't respond to Day 2 feedback, you've signaled unreliability. Check every PR you've opened before starting new work each morning.
+
+---
+
+## 10. End-of-Day Checklist
+
+Run this every evening during the blitz:
+
+- [ ] All open PRs have been checked for new feedback
+- [ ] All feedback received has been responded to (even just "acknowledged, fixing now")
+- [ ] CI is green on all open PRs
+- [ ] One meaningful comment made in each community channel today
+- [ ] Proposal progress is on schedule (see table in section 7)
+- [ ] Tomorrow's first PR target is already identified
+
+If you can check all 6, you're executing a top-10% GSoC campaign.
+
+---
+
+**Last Updated:** March 19, 2026
+**Mode:** 5-day blitz, proposals due March 24

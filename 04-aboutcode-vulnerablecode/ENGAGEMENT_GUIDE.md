@@ -1,8 +1,213 @@
-# VulnerableCode Community Engagement Guide
+# VulnerableCode: Day-by-Day Engagement Guide
 
-## Introduction
+**Community:** AboutCode — IRC (#aboutcode on Libera.Chat) and GitHub Discussions
+**GitHub:** https://github.com/aboutcode-org/vulnerablecode
+**Key contact:** Check CONTRIBUTING.rst for mentor handles
 
-This guide walks you through joining the VulnerableCode community, establishing communication channels, and preparing to contribute to the GSoC 2026 NLP/ML project.
+---
+
+## Day 1 — March 19: Join and Setup
+
+### Community Intro
+
+Post in GitHub Discussions (or IRC if active):
+```
+Hi AboutCode! I'm Zakir — ML/AI developer applying for GSoC 2026
+on the NLP/ML vulnerability detection project.
+
+Background: I've built NLP extraction pipelines with HuggingFace
+transformers, spaCy, and LangChain — including a RAG evaluation
+toolkit (spectra) and a personal intelligence platform (aegis) that
+extracts structured entities from unstructured reports.
+
+The VulnerableCode NLP project is solving exactly the problem I care
+about: making structured security data from unstructured sources
+auditable and confidence-scored, not a black box.
+
+I've cloned the repo, run the test suite (all passing), and explored
+the importer framework. Just submitted PR #NNN on [first issue].
+
+GitHub: JiwaniZakir
+```
+
+### DCO Setup (Do This Before First Commit)
+
+All commits to AboutCode projects must be signed off:
+```bash
+# Every commit needs -s flag
+git commit -s -m "fix: your message here"
+
+# Adds "Signed-off-by: Zakir Jiwani <jiwzakir@gmail.com>" to commit
+# This is the Developer Certificate of Origin requirement
+```
+
+Set up a commit template to avoid forgetting:
+```bash
+git config commit.template ~/.gitmessage
+# Add "Signed-off-by: Zakir Jiwani <jiwzakir@gmail.com>" to ~/.gitmessage
+```
+
+---
+
+## Day 2 — March 20: Technical Depth
+
+### Post a Specific NLP Question
+
+In GitHub Discussions or IRC:
+```
+Hi — working on my NLP vulnerability detection proposal and have
+a design question.
+
+I've been studying the importer framework and the existing data models.
+For NLP-extracted vulnerabilities, two design options:
+
+Option A: New `NLPImporter` that uses the same `Advisory` output format
+as existing importers, with an added `confidence_score` field.
+
+Option B: Separate pipeline with a `PendingAdvisory` staging table —
+low-confidence records wait for operator review before entering the
+main data flow.
+
+My preference is Option B because it makes the confidence threshold
+visible and auditable. But it adds a new model and admin view.
+
+Is Option B in scope for this GSoC project, or should I keep it
+simpler (Option A only) and note the review queue as future work?
+```
+
+This shows you've thought about the architecture tradeoffs — not just that you know NLP.
+
+---
+
+## Day 3 — March 21: Show NLP Depth
+
+### GitHub Discussion or PR Comment
+
+If you've submitted a PR that touches an importer, comment with a finding:
+```
+While working on this, I noticed [specific pattern in the importer structure].
+
+This is relevant to the NLP project because [connection to extraction pipeline].
+Specifically, [observation about how NER output would map to the Advisory fields].
+
+Is this how the team has been thinking about the NLP integration, or is
+there a different model in mind?
+```
+
+This signals you're thinking ahead beyond your immediate PR.
+
+---
+
+## Day 4 — March 22: Proposal Alignment
+
+### Share Outline for Feedback
+
+```
+Hi — working on finalizing my GSoC NLP/ML proposal. Quick alignment check:
+
+Proposed deliverables:
+1. NLPExtractor: CVE ID, package NER, version range, severity extraction
+2. ConfidenceScorer: 0.0-1.0 per field + aggregate record confidence
+3. 15+ TextFetcher implementations (mailing lists, PyPI, npm, cargo, GitHub)
+4. NLPImporter: integrates with existing importer framework
+5. Operator review queue: low-confidence extractions pending review
+6. Model training pipeline + fine-tuning scripts
+
+Priority question: Should model training scripts be a GSoC deliverable,
+or is the focus on the pipeline + pre-trained models from HuggingFace Hub?
+
+Also: For the fine-tuned NER model — is there an existing labeled dataset
+I should know about, or will I need to create a training set as part of the project?
+```
+
+---
+
+## Day 5 — March 23: Final Summary
+
+### Post Contribution Summary
+
+```
+Week 1 summary (GSoC applicant for NLP/ML detection):
+
+PRs submitted:
+- PR #NNN: [description] — [status]
+- PR #MMM: [description] — [status]
+
+Technical learnings:
+- The importer framework's Advisory output format is [observation]
+- The most challenging part of NLP integration will be [specific thing]
+  because [reason based on code study]
+
+Submitting proposal tomorrow. Thank you for the engagement this week.
+```
+
+---
+
+## Response Templates
+
+### When a Maintainer Reviews Your PR
+
+```
+Thanks for the thorough review!
+
+1. DCO: Amended with `git commit --amend -s`. Updated.
+2. Black formatting: Ran `black .` -- all clean.
+3. Re: [comment on test coverage]: Added tests for [edge case].
+   Now covers [specific scenarios].
+4. Re: [design comment]: Good point about [issue]. Changed approach
+   to [new approach] -- this is cleaner because [reason].
+
+Pushed updates. CI green. Ready for re-review!
+```
+
+### When Asking About NLP Architecture
+
+```
+Hi — I have a design question about [specific component]:
+
+Context: I'm designing [part of the pipeline] and need to decide
+between [option A] and [option B].
+
+Option A: [describe]
+Tradeoff: [faster/simpler but limitation]
+
+Option B: [describe]
+Tradeoff: [more complex but benefit]
+
+My preference is [A/B] because [reason]. But I want to make sure
+this aligns with how the codebase is expected to evolve.
+
+Specific question: [one clear question]
+```
+
+---
+
+## AboutCode-Specific Norms
+
+| Norm | Action |
+|------|--------|
+| DCO required | `git commit -s` on every commit |
+| black + isort formatting | Run before every commit |
+| pytest locally | Run before every PR |
+| Comment on issue first | Post approach before starting code |
+| No AI-generated code without understanding it | Read and understand every line you submit |
+
+---
+
+## Zakir's NLP Edge
+
+The strongest differentiator for this proposal is demonstrating actual NLP pipeline engineering experience, not just knowing what spaCy and HuggingFace are.
+
+**Specific talking points:**
+1. **spectra** (RAG eval toolkit): extraction pipelines, confidence scoring, structured output from unstructured text — directly parallel to VulnerableCode NLP
+2. **aegis** (intelligence platform): entity extraction from threat reports — same domain
+3. **lattice** (multi-agent framework): agents that reason about extraction confidence — relevant to the review queue design
+
+Reference these specific projects in every mentor interaction. Generic ML knowledge doesn't differentiate; specific applicable project experience does.
+
+---
+
+**Last Updated:** March 19, 2026
 
 ---
 

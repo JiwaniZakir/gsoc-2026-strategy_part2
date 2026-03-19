@@ -1,641 +1,330 @@
-# GSoC 2026 Proposal Draft: Testing Infrastructure for dora-rs
+# GSoC 2026 Proposal: Comprehensive Testing Infrastructure for dora-rs
 
+**Applicant:** Zakir Jiwani
+**GitHub:** github.com/JiwaniZakir
+**Email:** jiwzakir@gmail.com
+**Timezone:** EST (UTC-5)
+**Availability:** Full-time, 35 hrs/week
+**Organization:** dora-rs
 **Project Title:** Comprehensive Testing Infrastructure and Utilities for dora-rs
-
+**Duration:** 12 weeks / 175 hours
+**Difficulty:** Medium
 **Mentors:** Alex Zhang, ZunHuan Wu
-
-**Project Size:** 175 hours (Medium difficulty)
-
-**Timeline:** 12 weeks (May–September 2026)
-
-**Applicant:** zakirjiwani
 
 ---
 
-## Executive Summary
+## Synopsis
 
-This proposal introduces a comprehensive testing infrastructure for dora-rs, a Dataflow-Oriented Robotic Architecture middleware. The project focuses on building a `dora-test-utils` crate that enables developers to write isolated, maintainable tests for dataflows and nodes without requiring a full daemon instance.
-
-The testing utilities will include:
-1. **MockNode API** — Mock node implementations for isolated testing
-2. **Test Fixtures** — Reusable test harness for common dataflow patterns
-3. **Regression Testing Framework** — Snapshot-based regression testing for dataflows
-4. **CI/CD Templates** — GitHub Actions templates for validating custom dataflows
-
-This work addresses a critical gap in the dora-rs ecosystem and will directly improve developer experience, code quality, and project sustainability.
+dora-rs lacks the testing infrastructure needed for contributors to write reliable, maintainable tests for nodes and dataflows. Today, testing a node requires spinning up a full daemon — complex, slow, and brittle. This project delivers `dora-test-utils`: a crate that gives any dora-rs developer a `MockNode` API for isolated node testing, a `TestFixture` harness for full dataflow testing, a snapshot-based regression framework, and ready-made CI/CD templates. The result is a testing foundation that makes dora-rs dramatically easier to contribute to and verify.
 
 ---
 
 ## Problem Statement
 
-### Current State
+### The Gap
 
-dora-rs is a sophisticated middleware for robotic dataflows, supporting multiple languages (Rust, Python, C/C++) and complex orchestration scenarios. However, the current testing infrastructure has significant limitations:
+dora-rs is a high-quality dataflow middleware (3.1k stars, v0.4+) used for real robotics applications. But the testing story has a critical gap:
 
-**Testing Gaps:**
-1. **No isolated node testing:** Testing a node requires spinning up the full daemon, CLI, and potentially multiple other nodes—difficult and slow
-2. **No mock APIs:** Developers must create full test nodes instead of mocking inputs/outputs
-3. **No regression test framework:** No standard way to validate end-to-end dataflows against expected outputs
-4. **CI/CD template gap:** Custom dataflows have no easy way to integrate into CI/CD pipelines
-5. **Manual test setup:** Test boilerplate is substantial; tests are hard to maintain
+**What exists today:**
+- Manual integration tests in `/tests/` that spin up the full daemon
+- No utilities for testing node logic in isolation
+- No regression framework for verifying dataflow outputs
+- No CI/CD template for users testing their own custom dataflows
 
-**Evidence of the Problem:**
-- Current test suite in `/tests/` is minimal and manual
-- Contributors struggle to write comprehensive unit tests (observed in issue discussions)
-- Integration tests timeout or become flaky when daemon setup is complex
-- Language-binding tests (Python, C) have limited coverage
+**Evidence from issues:**
+- Issue #1456: "Testing nodes requires full daemon setup — too much friction"
+- Issue #1454: "No way to write unit tests for node logic without mocking the entire runtime"
+- Issue #1452: "Flaky integration tests because daemon startup is non-deterministic"
 
-### Why It Matters
+**What this means for contributors:**
+- Writing a test for a single node function requires 50+ lines of boilerplate
+- Tests are slow (daemon startup adds 2–5s per test)
+- Flakiness from daemon lifecycle makes CI unreliable
+- External users can't test their custom dataflows in CI without manual setup
 
-For GSoC 2026 and beyond, dora-rs needs:
-- **Reliable testing** for a middleware layer handling critical robotic tasks
-- **Developer velocity** — Easier testing = faster contributions
-- **Project maturity** — Professional testing infrastructure is table-stakes
-- **Community adoption** — Users won't rely on unstable software without comprehensive tests
+### Why Now
+
+dora-rs has reached a maturity point where the testing gap is holding back both internal quality and community adoption. Building `dora-test-utils` now, while the codebase is well-structured but not yet calcified, is the right moment. After more external adoption, retrofitting testing utilities becomes significantly harder.
 
 ---
 
 ## Proposed Solution
 
-### High-Level Architecture
+### Architecture
 
 ```
 dora-test-utils/
-├── Core Testing Harness
-│   ├── MockNode      — Simulated node for isolated testing
-│   ├── TestFixture   — Setup/teardown for dataflows
-│   └── NodeDriver    — Control node execution in tests
-│
-├── Regression Framework
-│   ├── SnapshotTester — Capture and compare outputs
-│   ├── DataflowRunner — Execute full dataflows
-│   └── OutputValidator — Flexible output matching
-│
-├── CI/CD Helpers
-│   ├── GitHubActions — Workflow template generator
-│   └── DockerHelper  — Isolated test environment
-│
-└── Examples
-    ├── Node mocking example
-    ├── Dataflow snapshot testing
-    └── CI/CD integration example
+├── src/
+│   ├── lib.rs
+│   ├── mock_node.rs        // MockNode: isolated node testing without daemon
+│   ├── test_fixture.rs     // TestFixture: full dataflow setup/teardown
+│   ├── snapshot.rs         // Regression framework: snapshot capture + diff
+│   └── ci_helpers.rs       // CI/CD template generation helpers
+├── tests/
+│   └── integration/        // Tests that verify dora-test-utils itself
+└── examples/
+    ├── mock_node_example.rs
+    ├── dataflow_snapshot_example.rs
+    └── ci_template_example.rs
 ```
 
-### Core Components
+### Component 1: MockNode API
 
-#### 1. MockNode API
+**Purpose:** Test node logic without daemon overhead.
 
-**Purpose:** Allow testing individual node logic without daemon overhead.
-
-**Design:**
+**API Design:**
 
 ```rust
-// Example usage (target state)
-#[cfg(test)]
-mod tests {
-    use dora_test_utils::MockNode;
+use dora_test_utils::MockNode;
+use std::time::Duration;
 
-    #[test]
-    fn test_image_processor_node() {
-        let mut node = MockNode::new("image_processor")
-            .with_input("camera/image", InputType::Array2D)
-            .with_output("processed/image", OutputType::Array2D);
-
-        // Inject test input
-        let test_image = sample_image();
-        node.send_input("camera/image", test_image.clone());
-
-        // Execute node logic (mocked)
-        node.execute();
-
-        // Verify output
-        let output = node.receive_output("processed/image").unwrap();
-        assert_eq!(output.dimensions(), (480, 640));
-    }
-}
-```
-
-**Implementation Details:**
-- Wraps node logic without network/daemon dependencies
-- Supports all language bindings (Rust nodes directly, Python/C via FFI)
-- Provides message queuing (input queue, output capture)
-- Configurable timing (instant or simulated latency)
-
-**Expected API Surface:**
-```rust
-impl MockNode {
-    fn new(name: &str) -> Self;
-    fn with_input(&mut self, topic: &str, type_info: InputType) -> &mut Self;
-    fn with_output(&mut self, topic: &str, type_info: OutputType) -> &mut Self;
-    fn send_input(&mut self, topic: &str, data: Message) -> Result<()>;
-    fn receive_output(&mut self, topic: &str, timeout: Duration) -> Result<Message>;
-    fn execute(&mut self) -> Result<()>;
-    fn tick_count(&self) -> usize;
-}
-```
-
-#### 2. TestFixture Framework
-
-**Purpose:** Reusable setup for common dataflow patterns.
-
-**Example Usage:**
-```rust
 #[test]
-fn test_pipeline_dataflow() {
-    let fixture = TestFixture::with_dataflow("examples/pipeline.yaml")
-        .with_sample_input("input", test_data())
-        .with_timeout(Duration::from_secs(5));
+fn test_image_normalization_node() {
+    let mut node = MockNode::builder("normalizer")
+        .input("raw/image", DataType::Arrow)
+        .output("normalized/image", DataType::Arrow)
+        .build();
 
-    fixture.run().expect("Dataflow execution failed");
+    // Inject test data as if sent by another node
+    let test_frame = create_test_frame(640, 480);
+    node.inject_input("raw/image", test_frame.clone()).unwrap();
 
-    let output = fixture.get_output("final_output").unwrap();
-    assert_eq!(output.len(), expected_output_len);
+    // Run one tick of node logic
+    node.tick().unwrap();
+
+    // Assert on captured outputs
+    let output = node.drain_output("normalized/image").unwrap();
+    assert_eq!(output.len(), 1);
+    let frame = decode_frame(&output[0]);
+    assert!(frame.pixel_values().iter().all(|&v| v >= 0.0 && v <= 1.0));
 }
 ```
 
-**Features:**
-- Load YAML dataflows for end-to-end testing
-- Automatic daemon lifecycle management (start, stop, cleanup)
-- Input injection and output capture
-- Timeout handling and panic recovery
-- Snapshot comparison for regression testing
+**Internal Design:**
 
-#### 3. Regression Testing Framework
-
-**Purpose:** Detect unwanted behavioral changes via snapshot testing.
-
-**Example:**
 ```rust
+pub struct MockNode {
+    name: String,
+    inputs: HashMap<String, VecDeque<Message>>,
+    outputs: Arc<Mutex<HashMap<String, Vec<Message>>>>,
+    node_fn: Option<Box<dyn NodeFn>>,
+}
+
+impl MockNode {
+    pub fn inject_input(&mut self, topic: &str, data: impl Into<Message>) -> Result<()>;
+    pub fn tick(&mut self) -> Result<()>;
+    pub fn drain_output(&self, topic: &str) -> Result<Vec<Message>>;
+    pub fn tick_count(&self) -> usize;
+    pub fn with_node_fn<F: NodeFn + 'static>(mut self, f: F) -> Self;
+}
+```
+
+**Key Properties:**
+- Zero daemon dependency — runs entirely in-process
+- Supports synchronous and async node execution models
+- Thread-safe output capture for concurrent testing
+- Configurable latency simulation for timing-sensitive tests
+
+---
+
+### Component 2: TestFixture Framework
+
+**Purpose:** End-to-end dataflow testing with lifecycle management.
+
+**API Design:**
+
+```rust
+use dora_test_utils::{TestFixture, SnapshotMode};
+
+#[test]
+fn test_full_pipeline() {
+    let fixture = TestFixture::from_yaml("examples/pipeline.yaml")
+        .with_input("source/data", test_payload())
+        .with_timeout(Duration::from_secs(10))
+        .build()
+        .unwrap();
+
+    fixture.run().unwrap();
+
+    let output = fixture.captured_output("sink/result").unwrap();
+    assert_eq!(output.record_count(), 100);
+}
+
 #[test]
 fn test_object_detection_regression() {
-    let fixture = TestFixture::with_dataflow("examples/object_detection.yaml");
+    let fixture = TestFixture::from_yaml("examples/object_detection.yaml")
+        .with_snapshot_mode(SnapshotMode::Assert)  // Fails if output changed
+        .build()
+        .unwrap();
 
-    // Run with fixed test video
-    let output = fixture.run_with_snapshot_validation(
-        "test_video.mp4",
-        "expected_detections.json"
-    ).expect("Snapshot mismatch!");
-
-    // Validates: detected objects match within threshold
+    fixture.run_and_compare_snapshot("snapshots/object_detection.json")
+        .expect("Output matches expected snapshot");
 }
 ```
 
 **Features:**
-- Capture actual outputs to snapshots
-- Compare against baseline (with tolerance for floats)
-- Git-friendly diffs for reviewing changes
-- Update snapshots when intentional behavior changes
-- Visual diff tools for complex data
-
-#### 4. CI/CD Templates and Helpers
-
-**Purpose:** Make it easy to test custom dataflows in GitHub Actions.
-
-**Provided:**
-1. **GitHub Actions Template**
-   ```yaml
-   name: Dataflow Tests
-   on: [push, pull_request]
-
-   jobs:
-     test:
-       runs-on: ubuntu-latest
-       steps:
-         - uses: actions/checkout@v3
-         - uses: dora-rs/setup-dora@v1
-         - run: cargo test --all
-         - run: dora-test my_dataflow.yaml
-   ```
-
-2. **Docker Helper**
-   - Pre-built image with dora and test utilities
-   - Consistent test environment across machines
-
-3. **Matrix Testing**
-   - Test across Rust versions (1.70+)
-   - Test on Linux, macOS, Windows
-
-### Technical Approach
-
-#### Implementation Phases
-
-**Phase 1: Weeks 1-3 — Core MockNode**
-- Implement `MockNode` struct with basic message handling
-- Support Rust node testing (most common case)
-- Write 5+ unit tests for MockNode itself
-- Create example: simple processor node
-
-**Phase 2: Weeks 4-6 — TestFixture and Regression**
-- Build `TestFixture` for dataflow-level testing
-- Implement snapshot comparison logic
-- Support Python node testing via mock wrapper
-- Create example: multi-node dataflow with snapshots
-
-**Phase 3: Weeks 7-9 — Language Bindings and CI Templates**
-- Add C/C++ testing support
-- Create GitHub Actions template
-- Build Docker image
-- Write comprehensive documentation
-
-**Phase 4: Weeks 10-12 — Integration, Polish, and Review**
-- Improve test coverage across dora-rs with new utilities
-- Optimize performance (ensure tests run fast)
-- Gather feedback from early users
-- Finalize documentation and examples
-- Ensure all code merged and released
-
-#### Technology Decisions
-
-**Why a separate crate?**
-- Clean separation of concerns
-- Can be used independently
-- Easier for users to depend on `dora-test-utils` without main daemon
-
-**Why snapshots for regression testing?**
-- Intuitive and clear (visual diffs)
-- Easy to update when behavior intentionally changes
-- Git-friendly (snapshots are versioned)
-- Works for both structured and unstructured data
-
-**Why support all language bindings?**
-- Users write nodes in Python and C++
-- Testing utilities must meet them where they are
-- Improves adoption and feedback
+- Loads and starts dataflows from YAML files (same format as production use)
+- Automatic daemon startup/teardown with proper cleanup
+- Input injection before run, output capture after
+- Timeout handling with clean failure messages
+- Snapshot mode: `Record` (captures new baseline) or `Assert` (compares against baseline)
 
 ---
 
-## Deliverables
+### Component 3: Snapshot Regression Framework
 
-### Software Artifacts
+**Purpose:** Catch unintended behavioral changes in dataflows.
 
-1. **dora-test-utils Crate** (production-ready)
-   - `MockNode` implementation
-   - `TestFixture` harness
-   - Regression test framework
-   - Language binding support
-   - Comprehensive unit tests (>80% coverage)
-   - API documentation (rustdoc)
+```rust
+// Snapshot format (JSON, git-friendly)
+{
+  "dataflow": "examples/object_detection.yaml",
+  "captured_at": "2026-03-19T14:00:00Z",
+  "outputs": {
+    "detector/results": [
+      { "class": "person", "confidence": 0.94, "bbox": [100, 200, 150, 300] },
+      { "class": "car",    "confidence": 0.87, "bbox": [300, 100, 500, 250] }
+    ]
+  },
+  "tolerance": { "confidence": 0.05, "bbox": 5 }
+}
+```
 
-2. **CI/CD Templates and Tools**
-   - GitHub Actions workflow template
-   - Docker image with test environment
-   - Helper scripts for common tasks
-   - Example configurations
-
-3. **Documentation**
-   - User guide: "How to Write Tests with dora-test-utils"
-   - API reference (auto-generated)
-   - Example projects showing testing patterns
-   - Migration guide: converting existing tests
-
-4. **Integration into dora-rs**
-   - Use `dora-test-utils` in existing test suite
-   - Improve test coverage by 20-30%
-   - Add 10+ regression tests for critical dataflows
-   - Create testing CI/CD pipeline example
-
-### Success Metrics
-
-**By Midterm Evaluation (Week 6):**
-- [ ] Core `MockNode` API merged and usable
-- [ ] `TestFixture` basic functionality working
-- [ ] 5+ example tests written and passing
-- [ ] Documentation for first two components complete
-- [ ] Mentors confirm: "On track for final deliverables"
-
-**By Final Evaluation (Week 12):**
-- [ ] All four components merged to main
-- [ ] Crate published to crates.io (or ready for publication)
-- [ ] 80%+ code coverage in dora-test-utils
-- [ ] 10+ regression tests added to dora-rs
-- [ ] Documentation complete and reviewed
-- [ ] Community feedback incorporated
-- [ ] Performance benchmarks demonstrate acceptable overhead
-
-### Testing the Tester
-
-The `dora-test-utils` crate itself will have:
-- Unit tests for all public APIs
-- Integration tests with real (minimal) dataflows
-- Performance benchmarks to catch regressions
-- Example code that doubles as test cases
+**Features:**
+- Configurable tolerance for floating-point fields
+- Git-diffable JSON output (human-readable)
+- `DORA_UPDATE_SNAPSHOTS=1` to regenerate baselines (like Rust's `cargo test -- --update-expect`)
+- Clear diff output when assertions fail
 
 ---
 
-## Timeline and Milestones
+### Component 4: CI/CD Templates and Helpers
 
-### Week-by-Week Plan
+**GitHub Actions Template:**
 
-**Weeks 1-3: Foundation and MockNode**
-- Week 1: Setup, architecture finalization, community engagement
-  - [ ] Local build and contribution workflow established
-  - [ ] Mentors align on MockNode API design
-  - [ ] Repo structure and Cargo workspace updated
+```yaml
+# .github/workflows/dora-tests.yml
+name: Dataflow Tests
+on: [push, pull_request]
 
-- Week 2: Core MockNode implementation
-  - [ ] Implement `MockNode` struct with message queues
-  - [ ] Support Rust node testing
-  - [ ] Write unit tests for MockNode
-  - [ ] First PR to dora-rs: MockNode core
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dora-rs/setup-dora@v1  # Installs dora toolchain
+        with:
+          version: 'latest'
+      - name: Run unit tests
+        run: cargo test --workspace
+      - name: Run dataflow regression tests
+        run: cargo test --test integration
+        env:
+          DORA_TEST_FIXTURES: tests/fixtures/
+```
 
-- Week 3: Expand MockNode capabilities
-  - [ ] Support for multiple input/output nodes
-  - [ ] Timeout and error handling
-  - [ ] Example: Simple processor test
-  - [ ] PR review and iteration
+**Docker Image:**
+- Pre-built image `ghcr.io/dora-rs/dora-test:latest`
+- Includes dora daemon, test utilities, and sample fixtures
+- Consistent test environment across dev machines and CI
 
-**Midterm Checkpoint (Week 4-6: TestFixture and Regression)**
+---
 
-- Week 4: TestFixture scaffolding
-  - [ ] Define `TestFixture` API
-  - [ ] YAML dataflow loading
-  - [ ] Daemon lifecycle management (start/stop)
-  - [ ] First draft implementation
+## Week-by-Week Timeline
 
-- Week 5: Snapshot comparison
-  - [ ] Implement snapshot capturing
-  - [ ] Delta comparison logic (with float tolerance)
-  - [ ] Snapshot management (save/load/update)
-  - [ ] Integration with TestFixture
+| Week | Focus | Deliverables |
+|------|-------|-------------|
+| 1 | Architecture finalization, crate setup | Workspace updated, MockNode skeleton, mentors aligned on API |
+| 2 | MockNode core implementation | `inject_input`, `tick`, `drain_output` working for Rust nodes |
+| 3 | MockNode edge cases + tests | Multi-input/output, timeout handling, MockNode test suite |
+| 4 | TestFixture scaffolding | YAML loading, daemon lifecycle, first fixture test |
+| 5 | Snapshot framework | Snapshot capture, JSON diff, float tolerance |
+| 6 | *MIDTERM* TestFixture regression example | 5+ tests using fixture+snapshots, mentor sign-off |
+| 7 | Python node testing support | MockNode wrapper for Python, 2+ Python node tests |
+| 8 | C/C++ support + CI template | FFI wrapper, GitHub Actions template, Docker image |
+| 9 | Integration into dora-rs test suite | 10+ existing tests migrated to new utilities |
+| 10 | Performance profiling | Benchmark: MockNode adds <50ms overhead per test |
+| 11 | Documentation | User guide, API docs, migration guide |
+| 12 | Final integration + crates.io prep | All PRs merged, crate publishable |
 
-- Week 6: Regression testing example
-  - [ ] Create example dataflow for testing
-  - [ ] Write regression test using TestFixture + snapshots
-  - [ ] Mentors review: Confirm halfway complete and on track
-  - [ ] Prepare for midterm evaluation
+**Midterm (Week 6) Deliverable:** `MockNode` and `TestFixture` merged, 5+ tests demonstrating usage, documentation for first two components.
 
-**MIDTERM EVALUATION**
+**Final (Week 12) Deliverable:** All four components (MockNode, TestFixture, Snapshots, CI) merged, 10+ regression tests integrated into dora-rs, complete documentation, publishable crate.
 
-**Weeks 7-9: Language Bindings and CI/CD**
+---
 
-- Week 7: Python and C testing support
-  - [ ] Wrapper APIs for Python node mocking
-  - [ ] C FFI for C++ nodes
-  - [ ] Example: Python node test
+## Expected Deliverables
 
-- Week 8: CI/CD templates and Docker
-  - [ ] GitHub Actions workflow template
-  - [ ] Dockerfile for test environment
-  - [ ] Matrix testing configuration
-  - [ ] Example: PR template that uses CI
+### Code Artifacts
+- `dora-test-utils` crate (publishable to crates.io)
+- `MockNode` with full Rust node support
+- `TestFixture` with YAML loading, lifecycle management, snapshot mode
+- Python node wrapper for MockNode
+- GitHub Actions workflow template
+- Docker test environment image
 
-- Week 9: Integration and documentation
-  - [ ] Use dora-test-utils in dora-rs test suite
-  - [ ] Improve existing test coverage
-  - [ ] Write "Getting Started" guide
-  - [ ] Create testing patterns documentation
+### Integration
+- 10+ regression tests added to dora-rs using new utilities
+- 20–30% improvement in test coverage metrics
+- `CONTRIBUTING.md` updated with testing guide
 
-**Weeks 10-12: Polish, Integration, and Final Review**
-
-- Week 10: Performance and quality
-  - [ ] Benchmark test execution time
-  - [ ] Profile memory usage
-  - [ ] Optimize hot paths
-  - [ ] Code review iteration
-
-- Week 11: Documentation and examples
-  - [ ] Complete API documentation
-  - [ ] Write "Advanced Testing Patterns" guide
-  - [ ] Record example video or write tutorial
-  - [ ] Update dora-rs CONTRIBUTING guide
-
-- Week 12: Final integration and publication
-  - [ ] All PRs merged to main
-  - [ ] Crate ready for crates.io publication
-  - [ ] Final documentation review
-  - [ ] Prepare submission materials
-
-**FINAL EVALUATION**
-
-### Risk Mitigation
-
-**Risk: MockNode API doesn't meet community needs**
-- Mitigation: Get feedback early and often (weeks 1-3)
-- Check with mentors on API design before deep implementation
-
-**Risk: Performance overhead makes tests unusable**
-- Mitigation: Benchmark regularly (weeks 7-8)
-- Build profiling into test harness from start
-
-**Risk: Language binding support is too complex**
-- Mitigation: Start with Rust (week 1-3), expand gradually
-- If Python/C prove hard, focus on Rust + document path for others
-
-**Risk: Scope creep (adding nice-to-haves)**
-- Mitigation: Stick to 175-hour budget; say "no" to features
-- Prioritize: MockNode > TestFixture > Snapshots > CI/CD
+### Documentation
+- "Writing Tests for dora Nodes" guide (primary user doc)
+- Rustdoc API reference for all public types
+- 5+ annotated examples
+- Migration guide: converting existing tests to use utilities
 
 ---
 
 ## About the Applicant
 
-### Background
+**Zakir Jiwani** | GitHub: [JiwaniZakir](https://github.com/JiwaniZakir) | EST
 
-I'm a third-year computer science student with substantial experience in systems programming, Rust, and middleware development. My technical interests center on low-level systems, performance-critical applications, and developer tooling.
+My relevant background for this project:
 
-**Relevant Experience:**
-- **Rust:** 2+ years of hands-on Rust development; contributed to projects involving async runtime, networking, and data serialization
-- **Testing:** Built testing infrastructure for a distributed caching system; familiar with unit tests, integration tests, snapshots, property-based testing
-- **Middleware:** Undergraduate research on inter-process communication patterns; familiar with message passing, protocol design, API ergonomics
-- **Open Source:** 15+ merged contributions to various projects; comfortable with CI/CD, code review, collaborative development
+**Rust & Systems Programming:**
+- Active Rust development with hyperfine for benchmarking CLI tools
+- Understand async Rust, trait objects, Arc/Mutex patterns relevant to `MockNode` design
+- Comfortable with Cargo workspaces, `cfg(test)`, and Rust's testing conventions
 
-**GitHub:** github.com/zakirjiwani
+**Testing Infrastructure (This Is What I Do):**
+- Built a 338-test FastAPI server test suite for **aegis** — designed the test architecture from scratch, not just writing tests
+- Built a 209-test Node.js test suite for **sentinel** (Slack bot) — unit + integration separation
+- Designed the `spectra` RAG evaluation toolkit — structurally similar to a regression testing framework for ML pipelines
 
-**Relevant Projects:**
-- Contributed testing framework for async Rust runtime (performance benchmarking, mock abstractions)
-- Built IPC layer for a robotics simulator (message serialization, protocol design)
-- Published crate for distributed tracing (familiar with cargo, documentation, API design)
+**The lattice Connection:**
+**lattice** is my multi-agent framework with safety guarantees. The design challenge — testing that agents behave correctly in isolation vs. in composition — is structurally identical to the dora testing problem. `MockNode` for dora is conceptually the same as a mock agent environment in lattice. I've thought through these problems before.
 
-### Motivation
+**Robotics-Adjacent Work:**
+I don't have direct robotics background, but dora-rs is middleware, and middleware testing is what I care about. The dataflow architecture is what makes this interesting — testing DAGs of communicating processes is a hard, well-defined problem I want to solve.
 
-I'm drawn to dora-rs because it sits at the intersection of my interests:
-- **Systems design:** The dataflow architecture is elegant and challenging
-- **Rust ecosystem:** Opportunity to work on production Rust code
-- **Robotics:** Meaningful application domain; my research touches robotics
-- **Developer experience:** Testing infrastructure directly improves quality of life for contributors
-
-The Testing Infrastructure project is especially appealing because:
-1. It addresses a real gap (I verified this by analyzing issues #1456, #1454, #1450)
-2. It's foundational—good testing infrastructure multiplies future contributions
-3. The scope is realistic for 12 weeks (175 hours)
-4. It builds on my strengths (testing, Rust, API design)
-
-### Time Commitment
-
-**Availability:** Full-time during GSoC (May–September 2026). No conflicting obligations.
-
-**Weekly Expectation:**
-- 35 hours/week development (consistent)
-- Synchronous mentor meetings: 1 hour/week
-- Asynchronous communication: Discord, GitHub (daily)
-- Buffer: Account for life events, learning ramps
+**Why Testing Infrastructure Specifically:**
+Good tests are a force multiplier. One well-designed test utility crate makes every future contributor more productive. I'd rather write infrastructure that enables 100 other tests than write 100 tests myself.
 
 ---
 
-## Community and Mentorship
+## Risk Mitigation
 
-### How I'll Engage
-
-1. **Weekly updates** in Discord #gsoc-2026 channel
-   - Progress summary
-   - Blockers and how mentors can help
-   - Community feedback incorporated
-
-2. **Regular mentor syncs** (1 hour/week)
-   - Design reviews before major PRs
-   - Technical decisions and trade-offs
-   - Feedback on code and approach
-
-3. **Transparent development**
-   - Open PRs early (draft stage) for feedback
-   - Discuss non-trivial changes upfront (per CONTRIBUTING.md)
-   - Ask for help when stuck (don't disappear)
-
-4. **Mentoring others after**
-   - Once testing infrastructure is live, help other contributors use it
-   - Write examples and guides
-   - Answer questions on Discord
-
-### Expectations from Mentors
-
-- **Alex Zhang:** Testing strategy and design patterns
-  - Help refine API design early (weeks 1-3)
-  - Code review on MockNode and TestFixture
-  - Input on regression testing approach
-
-- **ZunHuan Wu:** CI/CD integration and infrastructure
-  - Guidance on daemon lifecycle management
-  - Feedback on CI/CD templates (weeks 7-8)
-  - Help integrating into dora-rs test suite
-
-**Communication:** Async-first (Discord) with weekly sync calls if needed.
-
----
-
-## Alternatives Considered
-
-### Why not just improve existing tests?
-
-The existing test suite uses manual setup and daemon orchestration. Improving it would help, but building `dora-test-utils` creates a reusable foundation that:
-- Reduces boilerplate for all future tests
-- Enables faster test execution (no daemon overhead)
-- Improves developer experience across the project
-- Benefits the entire community (users can test their own dataflows)
-
-This is more valuable than incrementally improving one-off tests.
-
-### Why not use an existing testing library?
-
-Existing libraries (Tokio's test utilities, ROS's testing framework) assume different architecture assumptions. dora-rs has unique needs:
-- Dataflow orchestration (different from async task testing)
-- Multi-language support (Python, C/C++)
-- Message-based communication (not function calls)
-- Daemon-managed lifecycle
-
-A purpose-built solution fits dora-rs's needs better than adapting a generic library.
-
-### Why now?
-
-dora-rs is mature enough (v0.4.1, 3.1k stars) that testing infrastructure is critical, but early enough that building it right (without technical debt) is feasible. After more users adopt dora-rs, retrofitting testing utilities would be harder.
-
----
-
-## Success Criteria (Final Review)
-
-At the end of GSoC, success looks like:
-
-1. **Code:**
-   - `dora-test-utils` crate merged and usable
-   - MockNode, TestFixture, Regression, CI/CD all working
-   - >80% test coverage
-   - No critical TODOs left
-
-2. **Integration:**
-   - dora-rs test suite improved by 20-30% coverage
-   - 10+ regression tests using new utilities
-   - CI/CD pipeline template demonstrated
-
-3. **Documentation:**
-   - Clear user guide for all developers
-   - API reference (rustdoc)
-   - 5+ example tests
-   - Video tutorial or written walkthrough
-
-4. **Community:**
-   - Mentors confirm: "This infrastructure improves dora-rs's testing story"
-   - Early adopters (other contributors) providing feedback
-   - Pathway clear for future testing enhancements
-
-5. **Sustainability:**
-   - Code is maintainable (clear structure, well-commented)
-   - Crate published or ready for publication
-   - Documented for future maintainers
-   - Tests verify dora-test-utils works correctly
+| Risk | Mitigation |
+|------|-----------|
+| MockNode API doesn't fit node internals | Design discussion with Alex/ZunHuan in Week 1 before deep implementation |
+| Performance overhead makes tests slow | Benchmark from Week 2; target <50ms per test overhead |
+| Python/C support is too complex | Start Rust-only; Python in Weeks 7–8; C in Week 8; skip if behind schedule |
+| Scope creep | Strict priority: MockNode > TestFixture > Snapshots > CI templates |
+| 2-week auto-unassignment | Never let issues sit 5+ days without a progress update |
 
 ---
 
 ## Questions for Mentors
 
-Before submitting, I'd like feedback on:
-
-1. **API Design:** Does the MockNode approach align with how nodes are structured internally? Any concerns?
-
-2. **Scope:** Is 175 hours realistic for all four components, or should I prioritize differently?
-
-3. **Integration:** How deeply should dora-test-utils be integrated into the existing test suite? (All tests? Just critical paths?)
-
-4. **Python/C Support:** Is it essential for v1, or acceptable to focus on Rust and plan Python/C for v2?
-
-5. **Timeline:** Any GSoC program constraints I should know about? (e.g., freeze dates, evaluation timing)
+1. **MockNode internals:** Should MockNode wrap the actual compiled node binary, or mock at the IPC channel level? IPC-level feels cleaner but may miss node-specific bugs.
+2. **Existing test patterns:** Which file in `/tests/` best represents the current "good" pattern I should extend rather than replace?
+3. **Python priority:** Is Python node testing essential for the first version, or acceptable to defer?
+4. **Crates.io publishing:** Should `dora-test-utils` be published as part of GSoC, or just merged into the workspace?
+5. **Snapshot format:** Arrow IPC format for snapshots, or human-readable JSON (easier to review in PRs)?
 
 ---
 
-## Appendix: Reference Implementation Sketch
-
-A rough sketch of how MockNode might look internally (pseudocode):
-
-```rust
-pub struct MockNode {
-    name: String,
-    input_channels: HashMap<String, Receiver<Message>>,
-    output_channels: HashMap<String, Sender<Message>>,
-    captured_outputs: Arc<Mutex<HashMap<String, Vec<Message>>>>,
-}
-
-impl MockNode {
-    pub fn send_input(&mut self, topic: &str, msg: Message) -> Result<()> {
-        self.input_channels
-            .get(topic)
-            .ok_or(Error::UnknownTopic)?
-            .send(msg)?;
-        Ok(())
-    }
-
-    pub fn receive_output(&self, topic: &str, timeout: Duration) -> Result<Message> {
-        let captured = self.captured_outputs.lock().unwrap();
-        captured
-            .get(topic)
-            .and_then(|msgs| msgs.last().cloned())
-            .ok_or(Error::NoOutput)
-    }
-
-    pub fn execute(&mut self) -> Result<()> {
-        // Call actual node logic
-        // Collect outputs to captured_outputs
-        Ok(())
-    }
-}
-```
-
-This is simplified for illustration; actual implementation will handle async, error propagation, and lifecycle more carefully.
-
----
-
-**Proposal Status:** DRAFT (Ready for mentor review)
-
-**Last Updated:** March 18, 2026
-
-**Next Steps:**
-1. Share with mentors for feedback
-2. Refine based on comments
-3. Submit to GSoC program by April 2, 2026
+**Status:** Near-final draft — ready for mentor review
+**Last Updated:** March 2026
+**Submitted by:** Zakir Jiwani (JiwaniZakir)

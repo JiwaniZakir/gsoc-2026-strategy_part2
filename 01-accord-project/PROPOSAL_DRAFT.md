@@ -1,569 +1,359 @@
 # GSoC 2026 Proposal: APAP and MCP Server Hardening
 
-**Applicant:** Zakir Jiwani (github.com/zakirjiwani)
+**Applicant:** Zakir Jiwani
+**GitHub:** github.com/JiwaniZakir
+**Email:** jiwzakir@gmail.com
+**Timezone:** EST (UTC-5)
+**Availability:** Full-time, 35 hrs/week
 **Organization:** Accord Project (Linux Foundation)
 **Project Title:** APAP and MCP Server Hardening
-**Duration:** 12 weeks (175 hours)
-**Difficulty Level:** Medium
+**Duration:** 12 weeks / 175 hours
+**Difficulty:** Medium
 **Mentors:** Niall Roche, Dan Selman
 
 ---
 
-## Project Synopsis
+## Synopsis
 
-### Overview
-This project focuses on extending and hardening the Accord Project Asset Protocol (APAP) server and implementing production-ready Model Context Protocol (MCP) server integration. The goal is to expose template operations and agreement processing capabilities to modern AI clients such as Claude (Anthropic) and ChatGPT (OpenAI), enabling seamless integration of legal contract automation workflows into AI-powered applications.
+The Accord Project's APAP server and experimental MCP server integration currently lack production-hardening: comprehensive system tests are missing, error handling is inconsistent across endpoints, and the MCP surface area has no formal validation or documentation. This project delivers a production-ready MCP server with 100+ system tests, a complete error-handling framework with typed error classes, and developer documentation sufficient for third parties to build AI-integrated legal applications on top of Accord without writing a single line of bridge code.
+
+---
+
+## Problem Statement
 
 ### Current State
-- Accord Project has a mature, production-ready APAP server for managing templates and generating agreements
-- Experimental MCP server support exists but lacks comprehensive testing and documentation
-- MCP integration opens significant opportunities for AI-powered legal document automation
 
-### Proposed Changes
-- Extend MCP server implementation with production-ready features
-- Implement comprehensive system-level testing framework
-- Create detailed documentation and tutorials for MCP integration
-- Improve error handling and data validation across both servers
-- Develop example applications demonstrating AI integration capabilities
+The Accord Project has a mature APAP server for managing legal templates and generating agreements. An experimental MCP server was added to expose these capabilities to AI clients (Claude, ChatGPT), but it remains:
 
-### Impact
-This project will enable a new class of AI-powered legal applications by providing developers and AI systems with reliable, well-documented access to Accord Project's template and agreement processing capabilities. The hardened MCP server will serve as the foundation for enterprise-grade AI integration in legal technology.
+- **Undertested:** No system-level test suite covers the MCP protocol surface
+- **Fragile:** Error propagation is inconsistent — some endpoints return raw exceptions, others swallow errors silently
+- **Undocumented:** No integration guide exists for developers wanting to connect AI clients to Accord
+- **Unvalidated:** Input validation is absent from several API endpoints, enabling malformed requests to reach the template engine
+
+### Why This Matters
+
+Legal tech AI is growing fast. Accord Project is uniquely positioned to be the standard platform for legal contract automation over MCP — but only if the MCP server is reliable enough for production use. Right now, a developer trying to build a Claude plugin for legal document generation has:
+
+1. No test suite to verify their integration works
+2. No documentation describing what tools/resources the MCP server exposes
+3. No reliable error messages when something goes wrong
+
+This project eliminates all three gaps.
 
 ---
 
 ## Technical Approach
 
-### 1. Architecture & Design Phase (Week 5)
+### Component 1: System Testing Framework (Weeks 1–3)
 
-**Objectives:**
-- Define comprehensive MCP server architecture
-- Design new features and extensions
-- Create technical specifications
-- Plan testing and documentation strategy
+Build a comprehensive Jest-based test suite covering the MCP server's full surface area.
 
-**Key Activities:**
-- Review existing MCP server implementation
-- Analyze APAP server capabilities
-- Design new MCP resources and tools
-- Create architecture documentation
-- Define success criteria for each component
+**Test Categories:**
 
-**Deliverables:**
-- MCP Server Architecture Document (5+ pages)
-- Technical Design Specification
-- Feature list with priorities
-- Test plan overview
+| Category | Count | Scope |
+|----------|-------|-------|
+| MCP Resource Tests | 25+ | All exposed resources validated |
+| MCP Tool Tests | 20+ | All tools: input/output verified |
+| APAP Integration Tests | 25+ | End-to-end template → agreement flows |
+| Error Path Tests | 20+ | Malformed input, missing auth, edge cases |
+| Performance Benchmarks | 10+ | Response time SLAs under load |
 
-### 2. System Testing Framework (Weeks 6-7)
-
-**Objectives:**
-- Build comprehensive Jest-based testing framework
-- Achieve >80% code coverage
-- Test all critical paths and error cases
-- Ensure performance requirements met
-
-**Testing Scope:**
-
-**A. Unit Tests**
-- Individual function testing
-- Error handling in isolation
-- Data validation logic
-- Utility function behavior
-
-**B. Integration Tests**
-- APAP + MCP server interaction
-- Template processing end-to-end
-- API endpoint functionality
-- Database operations
-
-**C. System Tests**
-- Complete workflows from template to AI client
-- Error recovery scenarios
-- Concurrent request handling
-- Performance under load
-
-**D. Stress & Performance Tests**
-- Load testing with high concurrency
-- Memory profiling
-- CPU usage optimization
-- Response time benchmarking
-
-**Testing Technologies:**
-- Jest for test framework
-- Supertest for HTTP endpoint testing
-- Mock fixtures for data
-- GitHub Actions for CI/CD validation
-
-**Deliverables:**
-- 100+ system tests (Jest)
-- Test fixtures and utilities
-- Performance benchmarks
-- Coverage reports (>80% target)
-- CI/CD configuration
-
-### 3. Error Handling & Validation (Week 8)
-
-**Objectives:**
-- Implement robust error handling throughout system
-- Add comprehensive input validation
-- Improve debugging capabilities
-- Create standardized error formats
-
-**Error Handling Strategy:**
-
-**A. Custom Error Classes**
+**Implementation:**
 ```typescript
-class ApiError extends Error {
+// Example system test pattern (target state)
+describe('MCP Tool: generateAgreement', () => {
+  it('returns valid agreement for well-formed template', async () => {
+    const client = createTestMcpClient();
+    const result = await client.callTool('generateAgreement', {
+      templateId: 'test-template-001',
+      params: { party1: 'Acme Corp', amount: 5000 }
+    });
+    expect(result.type).toBe('agreement');
+    expect(result.content).toContain('Acme Corp');
+  });
+
+  it('returns typed ValidationError for missing required params', async () => {
+    const client = createTestMcpClient();
+    await expect(
+      client.callTool('generateAgreement', { templateId: 'test-template-001' })
+    ).rejects.toThrow(ValidationError);
+  });
+});
+```
+
+**Deliverable:** `tests/system/` directory with 100+ tests, CI integrated, coverage report ≥80%.
+
+---
+
+### Component 2: Error Handling Framework (Weeks 4–5)
+
+Replace ad-hoc error handling with a typed error hierarchy and consistent API responses.
+
+**Error Class Hierarchy:**
+```typescript
+// src/errors/index.ts
+export class AccordError extends Error {
   constructor(
-    public code: string,
-    public statusCode: number,
+    public readonly code: string,
+    public readonly httpStatus: number,
     message: string,
-    public details?: any
+    public readonly details?: Record<string, unknown>
   ) {
-    super(message)
+    super(message);
+    this.name = 'AccordError';
   }
 }
 
-class ValidationError extends ApiError { }
-class TemplateError extends ApiError { }
-class DatabaseError extends ApiError { }
+export class ValidationError extends AccordError {
+  constructor(message: string, public readonly field?: string) {
+    super('VALIDATION_ERROR', 400, message, { field });
+  }
+}
+
+export class TemplateNotFoundError extends AccordError {
+  constructor(templateId: string) {
+    super('TEMPLATE_NOT_FOUND', 404, `Template not found: ${templateId}`);
+  }
+}
+
+export class TemplateCompilationError extends AccordError {
+  constructor(message: string, public readonly line?: number) {
+    super('TEMPLATE_COMPILATION_ERROR', 422, message, { line });
+  }
+}
+
+export class McpProtocolError extends AccordError {
+  constructor(message: string) {
+    super('MCP_PROTOCOL_ERROR', 400, message);
+  }
+}
 ```
 
-**B. Validation at Multiple Layers**
-- Request body validation (middleware)
-- Schema validation (Concerto models)
-- Business logic validation (service layer)
-- Database operation validation
-
-**C. Standardized Error Responses**
+**Standardized Error Response Format:**
 ```json
 {
   "error": {
     "code": "TEMPLATE_COMPILATION_ERROR",
-    "message": "Human-readable error message",
-    "statusCode": 400,
-    "details": {
-      "line": 42,
-      "column": 15,
-      "suggestion": "Check template syntax..."
-    },
-    "timestamp": "2026-03-18T10:30:00Z",
-    "requestId": "req-123-abc"
+    "message": "Unexpected token at line 42: expected } but got ,",
+    "httpStatus": 422,
+    "details": { "line": 42, "suggestion": "Check closing braces in template clause" },
+    "requestId": "req-2026-abc123",
+    "timestamp": "2026-03-19T14:30:00Z"
   }
 }
 ```
 
-**D. Logging & Debugging**
-- Structured logging with Winston or Pino
-- Request/response logging
-- Performance metrics logging
-- Debug mode for development
+**Middleware Integration:**
+```typescript
+// src/middleware/errorHandler.ts
+export function errorHandlerMiddleware(
+  err: unknown,
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void {
+  if (err instanceof AccordError) {
+    res.status(err.httpStatus).json({
+      error: {
+        code: err.code,
+        message: err.message,
+        details: err.details,
+        requestId: req.headers['x-request-id'] ?? generateRequestId(),
+        timestamp: new Date().toISOString()
+      }
+    });
+    return;
+  }
+  // Unexpected errors: log + return generic 500
+  logger.error('Unexpected error', { err, path: req.path });
+  res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } });
+}
+```
 
-**Deliverables:**
-- Custom error classes and handlers
-- Input validation schemas
-- Consistent error response format
-- Debugging utilities and guides
-- Error documentation
-
-### 4. Documentation & Tutorials (Weeks 9-10)
-
-**Objectives:**
-- Create comprehensive MCP integration documentation
-- Write practical tutorials for developers
-- Document all APIs and resources
-- Provide example implementations
-
-**Documentation Includes:**
-
-**A. MCP Integration Guide**
-- MCP protocol overview
-- Accord Project MCP server architecture
-- Resource definitions and handlers
-- Tool definitions and parameters
-- Prompt template usage
-
-**B. Integration Tutorials**
-- "Getting Started with MCP" (TypeScript)
-- "Building a Claude Plugin for Legal Docs"
-- "Integrating with ChatGPT"
-- "Custom AI Client Implementation"
-
-**C. API Reference**
-- Complete endpoint documentation
-- Request/response examples
-- Error codes and meanings
-- Authentication and authorization
-- Rate limiting and quotas
-
-**D. Example Applications**
-- JavaScript/TypeScript CLI tool
-- Node.js API client
-- React component for template forms
-- Web application integration example
-
-**E. Troubleshooting Guide**
-- Common errors and solutions
-- Debug mode usage
-- Performance optimization
-- Logging and monitoring
-
-**Deliverables:**
-- MCP Integration Guide (20+ pages)
-- 3-5 complete tutorials with code
-- API reference documentation
-- 2-3 working example projects
-- Troubleshooting guide with FAQ
-
-### 5. Feature Extensions & DX Improvements (Weeks 11-12)
-
-**Objectives:**
-- Implement new MCP-exposed template operations
-- Add advanced features to APAP server
-- Improve developer experience
-- Performance optimization
-
-**Feature Extensions:**
-
-**A. New MCP Tools**
-- Template validation tool (with detailed feedback)
-- Agreement generation tool (with parameter support)
-- Template search and discovery tool
-- Agreement analysis and comparison tool
-- Template versioning and history tool
-
-**B. Enhanced Capabilities**
-- Interactive parameter collection
-- Template conditional logic support
-- Advanced agreement generation options
-- Bulk operation support
-- Template composition and inheritance
-
-**C. DX Improvements**
-- CLI tools for local MCP testing
-- VSCode extension improvements
-- Better error messages with actionable guidance
-- Developer toolkit and utilities
-- Linting rules for templates
-
-**D. Performance Optimizations**
-- Caching strategies for compiled models
-- Database query optimization
-- Lazy loading of large templates
-- Connection pooling
-- Response compression
-
-**Deliverables:**
-- 5+ new MCP tools implemented
-- Feature documentation
-- Performance improvements (20%+ baseline)
-- CLI testing utilities
-- Example use cases
-
-### 6. Testing, Hardening & Final Preparation (Week 12)
-
-**Objectives:**
-- Complete stress and security testing
-- Finalize all documentation
-- Prepare deployment-ready release
-- Create demonstration application
-
-**Testing & Validation:**
-
-**A. Security Hardening**
-- Input sanitization verification
-- Authentication/authorization testing
-- SQL injection prevention
-- Rate limiting effectiveness
-- CORS and CSRF protection
-
-**B. Performance Validation**
-- Load testing (1000+ concurrent requests)
-- Stress testing (peak demand scenarios)
-- Memory profiling and leak detection
-- CPU usage optimization
-- Response time SLA verification
-
-**C. End-to-End Testing**
-- Complete AI client workflows
-- Fail-over and recovery scenarios
-- Data consistency verification
-- Integration point validation
-
-**Deliverables:**
-- Security audit report
-- Performance test results and optimizations
-- End-to-end test suite
-- Deployment checklist
-- Demo application (fully functional)
-- Final documentation review
+**Deliverable:** `src/errors/` module, middleware integrated across all APAP + MCP endpoints, error documentation.
 
 ---
 
-## Week-by-Week Milestone Breakdown
+### Component 3: Input Validation Layer (Week 6)
 
-### Week 5: Foundation & Design
-**Focus:** Architecture design and planning
-- Days 1-2: Architecture design and specification
-- Days 3-4: Technical documentation
-- Days 5: Mentors review and feedback
+Add Zod-based schema validation to all APAP and MCP endpoints.
 
-**Deliverables:** Architecture doc, design spec, feature list
+```typescript
+// src/validation/schemas.ts
+import { z } from 'zod';
 
-### Week 6: Core Testing Infrastructure
-**Focus:** Build comprehensive testing framework
-- Days 1-2: Test framework setup and fixtures
-- Days 3-4: Implement core system tests (30+ tests)
-- Days 5: CI/CD integration and coverage reports
+export const GenerateAgreementSchema = z.object({
+  templateId: z.string().min(1).max(255),
+  params: z.record(z.unknown()),
+  options: z.object({
+    format: z.enum(['pdf', 'docx', 'json']).optional(),
+    locale: z.string().optional()
+  }).optional()
+});
 
-**Deliverables:** Test framework, 30+ tests, >80% coverage
+export const UploadTemplateSchema = z.object({
+  name: z.string().min(1).max(255),
+  content: z.string().min(1),
+  version: z.string().regex(/^\d+\.\d+\.\d+$/)
+});
+```
 
-### Week 7: Expand Test Coverage
-**Focus:** Complete system test coverage
-- Days 1-2: Integration tests (20+ tests)
-- Days 3-4: Error handling tests (20+ tests)
-- Days 5: Performance tests and benchmarks
-
-**Deliverables:** 100+ total tests, performance data, coverage reports
-
-### Week 8: Error Handling & Validation
-**Focus:** Robust error handling implementation
-- Days 1-2: Custom error classes and validation schemas
-- Days 3-4: Implement error handling throughout codebase
-- Days 5: Debug utilities and logging
-
-**Deliverables:** Error handling system, validation framework, debugging tools
-
-### Week 9: Documentation Part 1
-**Focus:** Core documentation and first tutorials
-- Days 1-2: MCP integration guide (10+ pages)
-- Days 3-4: First 2 tutorials with complete examples
-- Days 5: API reference documentation
-
-**Deliverables:** Integration guide, 2 tutorials, API docs
-
-### Week 10: Documentation Part 2 & Examples
-**Focus:** Complete tutorials and example applications
-- Days 1-2: Additional tutorials (2-3 more)
-- Days 3-4: Example applications (2+ complete projects)
-- Days 5: Troubleshooting guide and FAQ
-
-**Deliverables:** 5 tutorials, 2+ examples, troubleshooting guide
-
-### Week 11: Feature Extensions & Performance
-**Focus:** New features and optimization
-- Days 1-2: Implement new MCP tools (3-5 tools)
-- Days 3-4: Performance optimization and profiling
-- Days 5: Security hardening and audit
-
-**Deliverables:** New tools, performance improvements, security audit
-
-### Week 12: Final Testing, Demo & Submission
-**Focus:** Complete final preparation
-- Days 1-2: Stress testing and final hardening
-- Days 3: Demo application development
-- Days 4: Final documentation review and polish
-- Days 5: Prepare submission and demonstration
-
-**Deliverables:** Demo app, final docs, presentation materials, submission
+**Deliverable:** Validation schemas for all endpoints, 100% of API inputs validated at the boundary.
 
 ---
 
-## Expected Outcomes & Deliverables
+### Component 4: MCP Documentation & Developer Guide (Weeks 7–9)
 
-### Code Deliverables
-1. **Production-Ready MCP Server**
-   - Fully functional, well-tested implementation
-   - Comprehensive error handling
-   - Performance optimized
+Create the documentation that currently doesn't exist.
 
-2. **System Test Suite**
-   - 100+ Jest tests
-   - >80% code coverage
-   - Performance benchmarks
-   - Stress test data
+**Documentation Set:**
 
-3. **APAP Server Improvements**
-   - Enhanced error handling
-   - Input validation framework
-   - Performance optimizations
-
-### Documentation Deliverables
 1. **MCP Integration Guide** (20+ pages)
-   - Architecture overview
-   - Resource definitions
-   - Tool specifications
-   - Integration patterns
+   - MCP protocol overview (5 pages)
+   - Accord MCP server architecture (5 pages)
+   - All resources and tools documented with examples (10 pages)
 
-2. **Developer Tutorials** (5 complete tutorials)
-   - Getting started guide
-   - Claude integration tutorial
-   - ChatGPT integration tutorial
-   - Custom client tutorial
-   - Advanced features tutorial
+2. **Tutorials** (3 complete tutorials)
+   - "Build a Claude Plugin for Legal Documents" (TypeScript)
+   - "Integrate ChatGPT with Accord Project" (JavaScript)
+   - "Run Accord Templates from Python via MCP" (Python)
 
-3. **API Reference** (complete coverage)
-   - All endpoints documented
-   - Request/response examples
-   - Error codes documented
-   - Rate limiting documented
+3. **API Reference** (auto-generated + hand-curated)
+   - All endpoints, parameters, response shapes, error codes
 
-4. **Example Applications** (2-3 projects)
-   - JavaScript/Node.js CLI tool
-   - Web application example
-   - React component library
-   - All fully functional and documented
+4. **Troubleshooting Guide**
+   - 20+ FAQs based on common integration errors
+   - Debug mode instructions
+   - Performance tuning tips
 
-5. **Troubleshooting Guide**
-   - FAQ section (20+ Q&A)
-   - Common issues and solutions
-   - Performance optimization tips
-   - Debug mode usage
+---
 
-### Knowledge Artifacts
-1. **Technical Specification** (architecture document)
-2. **Testing Strategy Document** (test planning)
-3. **Performance Baseline** (benchmark data)
-4. **Security Audit Report**
-5. **Contribution Guidelines** (for future work)
+### Component 5: New MCP Tools & Feature Extensions (Weeks 10–11)
 
-### Metrics & Success Criteria
-- Test coverage: >80% code coverage
-- Documentation: 100+ pages of quality documentation
-- Performance: 20%+ improvement over baseline
-- Code quality: 0 ESLint errors, strict TypeScript
-- Community: 25+ merged PRs, active engagement
+Expand the MCP surface to expose more Accord capabilities to AI clients.
+
+**New MCP Tools:**
+
+| Tool Name | Description |
+|-----------|-------------|
+| `validateTemplate` | Validate template syntax and return structured errors |
+| `searchTemplates` | Semantic search across template library |
+| `compareAgreements` | Diff two generated agreements |
+| `extractTemplateParams` | Return parameterized fields from a template |
+| `bulkGenerateAgreements` | Generate multiple agreements from one template |
+
+**Developer Experience:**
+- CLI tool for local MCP server testing: `npx accord-mcp-test`
+- Debug mode that logs all MCP protocol messages
+- VSCode extension improvements for template authoring
+
+---
+
+### Component 6: Performance Testing & Hardening (Week 12)
+
+**Load Testing:**
+- Target: 1,000 concurrent MCP requests
+- Measure: p50/p95/p99 latency, error rate
+- Fix: Connection pooling, caching for compiled templates
+
+**Security Hardening:**
+- Input sanitization audit (prevent injection via template params)
+- Rate limiting for MCP endpoints
+- CORS configuration review
+
+**Deliverable:** Benchmark report with before/after numbers; all critical-path optimizations merged.
+
+---
+
+## Week-by-Week Timeline
+
+| Week | Focus | Key Deliverables |
+|------|-------|-----------------|
+| 1 | Architecture review, test framework setup | Test scaffold, CI integrated |
+| 2 | MCP resource + tool tests (40+ tests) | Test suite running |
+| 3 | APAP integration tests, error path tests | 100+ tests, ≥80% coverage |
+| 4 | Error class hierarchy + middleware | `AccordError` hierarchy, consistent 4xx/5xx |
+| 5 | Validation schemas for all endpoints | Zod schemas, 0 unvalidated inputs |
+| 6 | Buffer week: iteration on test/error feedback | All code reviewed + merged |
+| 7 | MCP Integration Guide (Part 1) | Architecture + resource docs |
+| 8 | Tutorials #1 and #2 | Claude and ChatGPT tutorials |
+| 9 | API reference + Tutorial #3 + Troubleshooting | Complete docs set |
+| 10 | New MCP tools: validateTemplate, searchTemplates | 2+ new tools |
+| 11 | New tools: compare, extract, bulk | 5 total new tools |
+| 12 | Performance testing, security hardening, demo | Benchmark report, demo app |
+
+---
+
+## Expected Deliverables
+
+### Code
+- 100+ system tests (Jest), ≥80% coverage
+- `AccordError` typed error hierarchy (5+ error classes)
+- Zod validation schemas for all API endpoints
+- 5+ new MCP tools
+
+### Documentation
+- MCP Integration Guide (20+ pages)
+- 3 complete tutorials with runnable code
+- Complete API reference
+- Troubleshooting guide (20+ FAQs)
+
+### Metrics
+- 20%+ latency improvement on critical paths
+- 0 unvalidated API inputs
+- ESLint clean, strict TypeScript throughout
 
 ---
 
 ## About the Applicant
 
-### GitHub Profile
-**GitHub:** github.com/zakirjiwani
+**Zakir Jiwani** | GitHub: [JiwaniZakir](https://github.com/JiwaniZakir) | EST
 
-### Experience & Background
-I bring strong technical expertise in:
-- **Languages:** TypeScript, JavaScript, Python, Rust
-- **Web Technologies:** Node.js, Express, React, Web APIs
-- **Testing & Quality:** Jest, testing frameworks, CI/CD
-- **Architecture:** Monorepo management, system design, scalability
-- **DevOps:** Docker, GitHub Actions, cloud platforms
+I'm a CS student who builds at the intersection of AI systems and production infrastructure. My relevant experience:
 
-### Relevant Experience
-- 3+ years of full-stack JavaScript/TypeScript development
-- Contributed to open-source projects with focus on code quality
-- Experience with legal technology and contract automation (relevant to Accord Project)
-- Strong testing and documentation practices
-- Experience with monorepo architectures (npm workspaces)
+**AI/Protocol Systems:**
+- Built **lattice**, a multi-agent framework with safety guarantees using LangGraph and DSPy — directly relevant to MCP protocol design
+- Implemented RAG evaluation pipelines with **spectra** using LangChain and GraphRAG
+- Deep familiarity with how LLM tool-use and function-calling protocols work
 
-### Why This Project
-The intersection of AI, legal technology, and open source is particularly compelling to me. This GSoC project provides the opportunity to:
+**TypeScript/Node.js:**
+- Built **sentinel**, a Slack community bot in Node.js 20 with 209 tests — mirrors the TypeScript + testing stack in Accord
+- Full-stack TypeScript development on **Partnerships_OS** (Turborepo/pnpm monorepo) — matches Accord's monorepo architecture
 
-1. **Build Production-Ready Systems** - Move from experimental to production-ready MCP integration
-2. **Enable AI Integration** - Help developers build the next generation of AI-powered legal applications
-3. **Contribute to Legal Tech** - Work on tools that make legal processes more accessible and efficient
-4. **Learn from Experts** - Work with experienced mentors (Niall Roche, Dan Selman) on complex systems
-5. **Create Lasting Impact** - Build foundations that future developers will build upon
+**Testing & Quality:**
+- 338 tests across **aegis** (Python/FastAPI/Celery) — deep experience designing test suites for API servers
+- Strong emphasis on typed error handling and validation in all my projects
 
-### Commitment
-- **Available:** Full-time for 12 weeks (175 hours)
-- **Communication:** Active and responsive on Discord and GitHub
-- **Quality Focus:** Strong emphasis on testing, documentation, and code quality
-- **Mentorship:** Eager to learn from mentors and community
-- **Long-term:** Potential to continue as contributor after GSoC
+**Open Source:**
+- Active contributions to **openclaw** (TypeScript, AI assistant gateway) — directly comparable to MCP server work
 
----
+**Why Accord + MCP Specifically:**
+I've been watching MCP adoption accelerate. Accord Project is the most technically interesting application of MCP I've seen — legal contracts as a protocol layer for AI. The hardening project solves a real gap: right now the MCP surface is too fragile for developers to rely on it. Making it production-ready unlocks an entire ecosystem. That's the kind of foundational work I want to do.
 
-## Project Requirements & Constraints
-
-### Technical Requirements
-- **Language:** TypeScript with strict mode
-- **Testing:** Jest with 80%+ coverage
-- **Code Quality:** ESLint passing, conventional commits
-- **Database:** PostgreSQL (where applicable)
-- **Deployment:** Docker-ready implementation
-- **Documentation:** Markdown, code examples, tutorials
-
-### Timeline Constraints
-- **Duration:** 12 weeks (175 hours total)
-- **Phase 1:** 2 weeks prior contributions
-- **Phase 2:** 2 weeks community engagement
-- **Phase 3:** 8 weeks GSoC project implementation
-- **Flexibility:** Can adjust priorities based on mentors guidance
-
-### Success Criteria
-1. ✅ MCP server hardened and production-ready
-2. ✅ 100+ system tests with >80% coverage
-3. ✅ Comprehensive documentation (50+ pages)
-4. ✅ 3-5 working tutorials with examples
-5. ✅ 20%+ performance improvements
-6. ✅ All code merged to main branch
-7. ✅ Active community engagement throughout
-8. ✅ Demo application showcasing capabilities
+**Commitment:** Full-time for 12 weeks. Responsive on Discord and GitHub daily. Contributing before the proposal deadline to demonstrate this isn't just words.
 
 ---
 
 ## Risk Mitigation
 
-### Potential Risks & Mitigation
-
-**Risk 1: Complexity of MCP Protocol**
-- *Mitigation:* Study MCP specification early, work closely with Dan Selman
-- *Backup:* Focus on APAP hardening if MCP becomes blocker
-
-**Risk 2: Performance Optimization Challenges**
-- *Mitigation:* Start profiling early, benchmark baseline week 6
-- *Backup:* Document findings, apply targeted optimizations
-
-**Risk 3: Documentation Quality**
-- *Mitigation:* Get early feedback from mentors, iterate
-- *Backup:* Use templates and examples from similar projects
-
-**Risk 4: Scope Creep**
-- *Mitigation:* Prioritize features, check with mentors weekly
-- *Backup:* Have clear "must-have" vs "nice-to-have" list
-
-**Risk 5: Testing Framework Challenges**
-- *Mitigation:* Review existing test patterns early
-- *Backup:* Simplify test approach if complexity exceeds estimates
+| Risk | Mitigation |
+|------|-----------|
+| MCP spec changes during project | Pin to MCP v1.0+; coordinate with Dan Selman on protocol direction |
+| Test framework complexity | Start with simplest test cases; build complexity incrementally |
+| Scope creep on documentation | Prioritize Integration Guide + 2 tutorials; 3rd tutorial is stretch |
+| 12-week timeline slippage | Buffer week 6 specifically designed for iteration and catch-up |
 
 ---
 
-## Technical Stack Summary
+## Questions for Mentors
 
-| Component | Technology | Version |
-|-----------|-----------|---------|
-| **Language** | TypeScript | 5.0+ |
-| **Runtime** | Node.js | 18+ LTS |
-| **Package Manager** | npm | 8+ |
-| **Testing** | Jest | 29+ |
-| **Database** | PostgreSQL | 13+ |
-| **API Framework** | Express/Fastify | Latest |
-| **Code Quality** | ESLint | Latest |
-| **CI/CD** | GitHub Actions | Built-in |
-| **Protocol** | MCP | v1.0+ |
-| **Documentation** | Markdown | Standard |
+1. **MCP server repository:** Is the MCP implementation in the main APAP repo or a separate package?
+2. **Testing precedent:** Are there existing system tests I should model? Which test file best represents the current pattern?
+3. **Priority of new MCP tools:** Of the 5 proposed new tools, which 2 would be most impactful for the community?
+4. **Documentation format:** Preferred format for tutorials — MDX, plain Markdown, or integrated into existing docs site?
 
 ---
 
-## Conclusion
-
-The APAP and MCP Server Hardening project represents a critical opportunity to enable the next generation of AI-powered legal applications. By hardening the MCP server, implementing comprehensive testing, and creating detailed documentation, this project will establish Accord Project as a go-to platform for AI-integrated legal technology.
-
-I am committed to delivering production-ready code, comprehensive documentation, and a strong foundation for future contributions. Working with mentors Niall Roche and Dan Selman, I will ensure the project meets the highest standards of code quality, testing, and documentation.
-
-### Key Deliverables at a Glance
-- **Code:** Production-ready MCP server with 100+ tests
-- **Testing:** >80% code coverage with performance benchmarks
-- **Documentation:** 50+ pages with 5 complete tutorials
-- **Examples:** 2-3 working applications
-- **Performance:** 20%+ improvement over baseline
-- **Community:** 25+ merged PRs, active engagement
-
----
-
-**Submitted by:** Zakir Jiwani
-**Contact:** github.com/zakirjiwani
-**Available:** Full-time, 12 weeks
-**Mentors:** Niall Roche, Dan Selman
+**Status:** Near-final draft — ready for mentor review
 **Last Updated:** March 2026
+**Submitted by:** Zakir Jiwani (JiwaniZakir)

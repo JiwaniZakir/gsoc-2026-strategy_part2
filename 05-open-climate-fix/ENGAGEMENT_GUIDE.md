@@ -1,8 +1,203 @@
-# Community Engagement Guide - Open Climate Fix
+# Open Climate Fix: Day-by-Day Engagement Guide
 
-## Purpose
+**Community:** OCF Slack (check project README for invite) + GitHub Discussions
+**GitHub:** https://github.com/openclimatefix/open-source-quartz-solar-forecast
+**Key rule:** Comment on issues BEFORE starting any work
 
-This guide provides practical templates, examples, and best practices for engaging with the Open Climate Fix community. Following these guidelines ensures smooth collaboration and strengthens relationships with the team.
+---
+
+## Day 1 — March 19: Join and Land
+
+### Community Intro
+
+Post in OCF Slack `#open-source-dev` or GitHub Discussions:
+```
+Hi Open Climate Fix! I'm Zakir — ML/AI developer applying for GSoC 2026
+on the Quartz Solar error adjustment project (TabPFN adjuster).
+
+Background: I've worked with tabular ML models and uncertainty quantification
+in spectra (RAG evaluation toolkit) and aegis (intelligence platform).
+The TabPFN approach to forecast error correction is technically interesting —
+learning systematic residuals in-context, no retraining infrastructure needed.
+
+I've set up the local environment, run the test suite (all passing), and
+explored the prediction pipeline. Just submitted PR #NNN on [first issue].
+
+GitHub: JiwaniZakir
+```
+
+### Issue Claim Template
+
+Post on any issue before starting work:
+```
+I'd like to work on this as a GSoC 2026 applicant (error adjustment project).
+
+I've reviewed the codebase and understand the scope. My approach:
+1. [Step 1]
+2. [Step 2]
+
+Will post a draft PR once I have something working.
+```
+
+---
+
+## Day 2 — March 20: Technical Engagement
+
+### Open a GitHub Discussion on Adjuster Design
+
+Title: `[Design] TabPFN Adjuster Integration — GSoC 2026 Proposal`
+
+```
+Working on my GSoC proposal for the error adjustment project.
+Wanted to share my integration design and get feedback.
+
+Proposed API (backward compatible):
+  run_forecast(site, timestamp)                # Unchanged
+  run_forecast(site, timestamp, apply_adjuster=True)  # New opt-in
+
+The adjuster:
+1. Loads last N days of (forecast, actual) pairs for the site
+2. Builds features: forecast value, time of day, season, weather vars
+3. Fits TabPFN in-context on that history
+4. Predicts residual for the new forecast
+5. Returns adjusted value + confidence interval
+
+Design question:
+Should the adjuster be a class (TabPFNAdjuster) with fit/predict methods,
+or a module-level function? Class seems better for testability and
+eventual per-site caching.
+
+Also: What's the current data format for historical (forecast, actual) pairs?
+Is there existing infrastructure for loading site-specific history?
+```
+
+This shows you've thought through the implementation deeply.
+
+---
+
+## Day 3 — March 21: Show ML Depth
+
+### Post a Finding from Your Exploration
+
+```
+While exploring the prediction pipeline, I noticed [specific observation
+about current error patterns, e.g., how residuals are or aren't calculated].
+
+For the TabPFN adjuster, this means [implication for design].
+
+Specifically: [concrete question about how to handle this].
+```
+
+This signals you're reading the code to understand it, not just to find something to change.
+
+---
+
+## Day 4 — March 22: Mentor Alignment
+
+### Share Proposal Summary
+
+```
+Hi — finalizing my GSoC proposal for the error adjustment project.
+Quick check on priorities:
+
+Core deliverables (12 weeks):
+1. TabPFNAdjuster class: fit/predict with uncertainty intervals
+2. Feature engineering: time, season, weather features
+3. run_forecast(apply_adjuster=True) integration
+4. POST /forecast/adjusted REST endpoint
+5. Benchmark: 10-15% MAE improvement target
+6. Documentation + example notebook
+
+Stretch (if ahead):
+7. React dashboard component (adjusted vs. raw visualization)
+8. Per-site context caching for production performance
+
+Question: Is the React dashboard component expected in scope, or
+should I treat it as optional? I want to be realistic about 13 weeks.
+
+Also: Do you have test sites I should use for the MAE benchmark evaluation?
+```
+
+---
+
+## Day 5 — March 23: Final Summary
+
+### Post Contribution Summary
+
+```
+Week 1 summary (GSoC applicant for error adjustment):
+
+PRs submitted:
+- PR #NNN: [description] — [status]
+- PR #MMM: [description] — [status]
+
+Technical learnings:
+- [Observation about current model error patterns]
+- [How TabPFN will fit into the existing architecture]
+
+Submitting proposal tomorrow. Thank you for the engagement this week!
+```
+
+---
+
+## Response Templates
+
+### When a Maintainer Reviews Your PR
+
+```
+Thanks for the review!
+
+1. Re: [type annotation comment]: Added missing types in commit [hash].
+2. Re: [test comment]: Added test for [edge case] — now covers [scenario].
+3. Re: [approach comment]: You're right about [concern]. Changed to
+   [new approach] because [reason]. Cleaner and [benefit].
+
+pytest passing. CI green. Ready for re-review!
+```
+
+### When Discussing TabPFN Architecture
+
+```
+Thanks for the feedback on [design question].
+
+Based on your input, I'm updating the approach:
+
+Original: [what I proposed]
+Updated: [what I'm now planning, based on feedback]
+
+Reason for change: [why their feedback made sense]
+
+Does this updated approach look right to you?
+```
+
+---
+
+## OCF-Specific Norms
+
+| Norm | Why |
+|------|-----|
+| Comment before coding | Prevents duplicate work, ensures alignment |
+| pytest must pass | CI is strict — don't submit with failures |
+| Type annotations | Python code should be typed |
+| Jupyter notebooks OK | For exploration, but production code goes in .py files |
+| Small focused PRs | Review speed correlates inversely with PR size |
+
+---
+
+## Zakir's ML Edge
+
+The strongest differentiator for this proposal is showing you understand *why* TabPFN is the right tool, not just that you can use it.
+
+**Key talking points:**
+1. **spectra** (RAG eval): quality scoring from features — same structure as predicting forecast error from weather features
+2. **In-context learning for small tabular data:** TabPFN was designed for this; gradient boosting/XGBoost needs more data. For per-site historical pairs (30–90 days), TabPFN wins.
+3. **Uncertainty quantification matters here:** Grid operators don't just want a point prediction — they need a confidence interval for dispatch decisions.
+
+Reference these specific points in every mentor interaction.
+
+---
+
+**Last Updated:** March 19, 2026
 
 ---
 
