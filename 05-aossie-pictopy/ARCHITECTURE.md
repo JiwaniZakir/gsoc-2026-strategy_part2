@@ -1,77 +1,10 @@
-# AOSSIE — Codebase Architecture
+# AOSSIE PictoPy — Codebase Architecture
+
+**Focus: PictoPy only. Agora (Scala) is not a target.**
 
 ---
 
-## Agora (Scala Voting Library)
-
-**Repo:** https://github.com/AOSSIE-Org/Agora
-**Language:** Scala 2.13
-**Build:** sbt (Scala Build Tool)
-
-### Directory Structure
-
-```
-Agora/
-├── src/
-│   ├── main/scala/
-│   │   └── org/aossie/agora/
-│   │       ├── algorithm/          # Voting algorithms
-│   │       │   ├── SchulzeMethod.scala
-│   │       │   ├── InstantRunoff.scala
-│   │       │   ├── BordaCount.scala
-│   │       │   ├── ApprovalVoting.scala
-│   │       │   └── ...
-│   │       ├── model/              # Data models
-│   │       │   ├── Election.scala
-│   │       │   ├── Ballot.scala
-│   │       │   └── Winner.scala
-│   │       └── util/               # Utilities
-│   └── test/scala/
-│       └── org/aossie/agora/
-│           └── algorithm/          # ScalaTest test specs
-├── build.sbt                       # sbt build definition
-├── project/
-│   ├── build.properties            # sbt version
-│   └── plugins.sbt                 # sbt plugins
-└── .github/
-    └── workflows/
-        └── build.yml               # CI: sbt compile + test
-```
-
-### Scala Build Commands
-
-```bash
-# Compile
-sbt compile
-
-# Run tests
-sbt test
-
-# Generate test coverage (after adding Scoverage plugin)
-sbt coverage test coverageReport
-
-# Generate scaladoc
-sbt doc
-
-# Package as JAR
-sbt package
-
-# Publish locally
-sbt publishLocal
-```
-
-### Agora Algorithm Pattern
-
-Each algorithm implements a common interface:
-```scala
-trait VotingAlgorithm[A <: Election] {
-  def winners(election: A, numberOfWinners: Int): Seq[Winner]
-}
-```
-
----
-
-## PictoPy (Python ML Photo Manager) — Primary Target
+## PictoPy (Python ML Photo Manager)
 
 **Repo:** https://github.com/AOSSIE-Org/PictoPy
 **Language:** Python 3.10+ (with some Rust via PyO3)

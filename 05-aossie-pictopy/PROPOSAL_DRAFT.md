@@ -3,8 +3,8 @@
 **Applicant:** Zakir Jiwani | GitHub: JiwaniZakir | jiwzakir@gmail.com
 **Organization:** AOSSIE (Australian Open Source Software Innovation and Education)
 **Project Title:** PictoPy: Advanced AI-Powered Photo Organization and Discovery Engine
-**Duration:** 350 hours (large project)
-**Mentors:** TBD — contact gsoc@aossie.org
+**Duration:** ~175 hours (confirm on AOSSIE wiki — size TBC)
+**Mentors:** TBD — contact gsoc@aossie.org or ask in Gitter
 
 ---
 

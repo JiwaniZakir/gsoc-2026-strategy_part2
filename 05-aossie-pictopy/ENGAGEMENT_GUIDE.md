@@ -1,4 +1,6 @@
-# AOSSIE Agora — Day-by-Day Engagement Guide
+# AOSSIE PictoPy — Day-by-Day Engagement Guide
+
+**Focus: PictoPy only. No Agora (Scala).**
 
 ## Communication Channels
 
@@ -12,30 +14,30 @@
 
 ---
 
-## Day 1 — March 19: Introduction on Gitter
+## Day 1 — March 20: Introduction on Gitter
 
-**Where:** https://gitter.im/AOSSIE/ (main room or #agora room)
+**Where:** https://gitter.im/AOSSIE/ (main room or #pictopy room)
 
 **Message template:**
 ```
 Hi AOSSIE team,
 
-I'm Zakir Jiwani (GitHub: JiwaniZakir), a Python/ML developer interested in GSoC 2026
-with AOSSIE.
+I'm Zakir Jiwani (GitHub: JiwaniZakir), a Python/ML developer applying for
+GSoC 2026 with AOSSIE — specifically focused on PictoPy.
 
-I've been looking at both Agora and PictoPy. My background is Python/ML (transformers,
-LangChain, computer vision), so PictoPy looks like a strong fit technically.
+Background: Merged PRs in huggingface/transformers (CLIP is transformer-based),
+graphrag (FAISS-style vector retrieval), and FastAPI production experience.
+I've built a RAG evaluation toolkit (spectra) using very similar embedding patterns
+to what PictoPy uses.
 
-I've submitted a PR today to Agora (#[PR number] — Scoverage CI coverage) and am
-planning contributions to PictoPy this week.
+I've submitted my first PR to PictoPy today: [link] — [brief description]
 
 Questions:
-1. Is there a 2026 GSoC ideas page I should reference?
-2. Is PictoPy an active GSoC sub-project for 2026?
-3. Is there a mentor for PictoPy I should reach out to directly?
+1. Is PictoPy an active GSoC sub-project for 2026? (I see it listed in the ideas wiki)
+2. Is there a mentor for PictoPy I should connect with directly?
+3. Are there specific improvements the team is prioritizing for this year?
 
-Happy to work across multiple AOSSIE sub-projects — I just want to contribute where
-it's most useful.
+Looking forward to contributing.
 
 Zakir
 ```
@@ -58,14 +60,14 @@ about consistency, not just implementing blindly.
 
 ---
 
-## Day 3 — March 21: Proposal Discussion on Gitter
+## Day 3 — March 22: Proposal Discussion on Gitter
 
 **Message:**
 ```
 Following up on my intro — here are my PRs so far:
-- Agora PR #X: Scoverage coverage report
-- PictoPy PR #Y: Type annotations + docstrings for core module
-- PictoPy PR #Z: FastAPI endpoint tests
+- PictoPy PR #X: Type annotations + docstrings for core module
+- PictoPy PR #Y: FastAPI endpoint tests
+- PictoPy PR #Z: CLIP embedder draft (GSoC preview)
 
 For GSoC, I'm interested in proposing a PictoPy project focused on:
 1. Improving the image clustering and recommendation engine with better ML models
@@ -88,23 +90,20 @@ comment on the wiki discussion or email gsoc@aossie.org to express interest.
 
 ---
 
-## Day 5 — March 23: Final Summary
+## Day 5 — March 24: Final Summary
 
 **Where:** Gitter (reply to your intro thread)
 
 ```
-End of week summary:
+End of week summary (PictoPy):
 
-Agora contributions:
 - PR #X: [title] — [status]
-
-PictoPy contributions:
 - PR #Y: [title] — [status]
 - PR #Z: [title] — [status]
-- PR #W: [title] — [status]
+- PR #W: CLIP + FAISS draft — [status]
 
-GSoC proposal submitted today. I'm applying for the [PictoPy / AOSSIE] track.
-Thanks to @[mentor] for the guidance this week — the feedback on [specific issue] was helpful.
+GSoC proposal submitted today — PictoPy AI backend enhancement (175h).
+Thanks to @[mentor] for the feedback this week.
 ```
 
 ---

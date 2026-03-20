@@ -1,6 +1,6 @@
-# Project #5: honeynet/GreedyBear
+# Project #4: honeynet/GreedyBear — Event Collector API
 
-**Score: 49.72 | Rank: #5**
+**Rank: #4 | Org: Honeynet Project | Size: 175–350h | Confirmed GSoC 2026**
 
 ## Organization Overview
 
@@ -12,7 +12,14 @@
 - **Language:** Python, Django, REST API
 - **Related project:** IntelOwl (also under Honeynet) — larger, more activity
 
-## Why GreedyBear is #5
+## GSoC Project Idea: Event Collector API
+
+**Goal:** Build a REST API that allows external honeypot nodes (T-Pot, Cowrie, Dionaea, etc.)
+to push events directly to GreedyBear, replacing the current pull-only architecture.
+
+**Size:** 175–350h | **Difficulty:** Medium
+
+## Why GreedyBear is #4
 
 - Cybersecurity + Python/Django is a strong fit for Zakir's skill set
 - Honeynet Project is a well-established GSoC org with experienced mentors
@@ -88,4 +95,4 @@
 | Honeynet GSoC | https://www.honeynet.org/gsoc/ | Official GSoC info |
 
 ---
-*Priority: #5 — Solid Python/Django project with good mentors. Ruff compliance non-negotiable.*
+*Priority: #4 — Solid Python/Django project with good mentors. Ruff compliance non-negotiable. Same org as #1 (IntelOwl) — Honeynet PRs help both proposals.*
